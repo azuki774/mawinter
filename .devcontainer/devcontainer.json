@@ -7,7 +7,7 @@
   "remoteUser": "vscode",
   "features": {
     "ghcr.io/devcontainers/features/go:1": {
-      "version": "1.23"
+      "version": "1.25.3"
     },
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22"
@@ -21,6 +21,11 @@
       "username": "vscode",
       "userUid": "automatic",
       "userGid": "automatic"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
     }
   },
   "customizations": {
@@ -90,11 +95,7 @@
       }
     }
   },
-  "forwardPorts": [
-    8080,
-    3000,
-    3306
-  ],
+  "forwardPorts": [8080, 3000, 3306],
   "portsAttributes": {
     "8080": {
       "label": "Backend API",
@@ -119,7 +120,8 @@
     "DB_PASSWORD": "password",
     "DB_NAME": "mawinter",
     "GO111MODULE": "on",
-    "GOPATH": "/home/vscode/go"
+    "GOPATH": "/home/vscode/go",
+    "PATH": "/home/vscode/go/bin:${containerEnv:PATH}"
   },
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,readonly,type=bind,consistency=cached"
