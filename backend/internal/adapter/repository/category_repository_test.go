@@ -1,9 +1,14 @@
 package repository
 
 import (
+	"context"
 	"testing"
+	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/azuki774/mawinter/internal/domain"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 func TestCategoryModel_ToDomain(t *testing.T) {
@@ -37,10 +42,6 @@ func TestCategoryModel_TableName(t *testing.T) {
 	}
 }
 
-// 注: 実際のデータベース接続を使った統合テストは、
-// CI/CD環境でデータベースが利用可能な場合に実行されるべきです。
-// ここでは基本的な単体テストのみを含めています。
-
 func TestNewCategoryRepository(t *testing.T) {
 	// nilチェック
 	repo := NewCategoryRepository(nil)
@@ -49,40 +50,99 @@ func TestNewCategoryRepository(t *testing.T) {
 	}
 }
 
-// FindAllの統合テストの例（実際のDBが必要）
-// この関数は実際のDBが利用可能な環境でのみ実行されます
-func TestCategoryRepository_FindAll_Integration(t *testing.T) {
-	// DB接続がない場合はスキップ
-	t.Skip("Integration test requires database connection")
+// setupMockDB はテスト用のモックDBを作成する
+func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
 
-	// 実際の統合テストの実装例:
-	// db, err := gorm.Open(...)
-	// if err != nil {
-	//     t.Fatal(err)
-	// }
-	//
-	// repo := NewCategoryRepository(db)
-	// categories, err := repo.FindAll(context.Background())
-	// if err != nil {
-	//     t.Fatal(err)
-	// }
-	//
-	// if len(categories) == 0 {
-	//     t.Error("expected at least one category")
-	// }
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open gorm DB: %v", err)
+	}
+
+	return gormDB, mock
 }
 
-func TestCategoryRepository_FindAll_Context(t *testing.T) {
-	// この関数は実際のDBが必要なのでスキップ
-	t.Skip("Integration test requires database connection")
+func TestCategoryRepository_FindAll(t *testing.T) {
+	gormDB, mock := setupMockDB(t)
 
-	// 実際の実装例（コンテキストのキャンセルテスト）:
-	// ctx, cancel := context.WithCancel(context.Background())
-	// cancel() // すぐにキャンセル
-	//
-	// repo := NewCategoryRepository(db)
-	// _, err := repo.FindAll(ctx)
-	// if err == nil {
-	//     t.Error("expected error due to cancelled context")
-	// }
+	// モックデータの準備
+	rows := sqlmock.NewRows([]string{"id", "category_id", "name", "category_type", "created_at", "updated_at"}).
+		AddRow(1, 100, "月給", 1, time.Now(), time.Now()).
+		AddRow(2, 200, "家賃", 2, time.Now(), time.Now()).
+		AddRow(3, 700, "NISA入出金", 4, time.Now(), time.Now())
+
+	// 期待するクエリを設定
+	mock.ExpectQuery("^SELECT \\* FROM `Category` ORDER BY category_id$").
+		WillReturnRows(rows)
+
+	// テスト実行
+	repo := NewCategoryRepository(gormDB)
+	categories, err := repo.FindAll(context.Background())
+
+	// 検証
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if len(categories) != 3 {
+		t.Errorf("expected 3 categories, got %d", len(categories))
+	}
+
+	// 最初のカテゴリの確認
+	if categories[0].CategoryID != 100 {
+		t.Errorf("expected category_id 100, got %d", categories[0].CategoryID)
+	}
+	if categories[0].Name != "月給" {
+		t.Errorf("expected name '月給', got '%s'", categories[0].Name)
+	}
+	if categories[0].CategoryType != domain.CategoryTypeIncome {
+		t.Errorf("expected category_type Income, got %v", categories[0].CategoryType)
+	}
+
+	// 2番目のカテゴリの確認
+	if categories[1].CategoryType != domain.CategoryTypeOutgoing {
+		t.Errorf("expected category_type Outgoing, got %v", categories[1].CategoryType)
+	}
+
+	// 3番目のカテゴリの確認
+	if categories[2].CategoryType != domain.CategoryTypeInvesting {
+		t.Errorf("expected category_type Investing, got %v", categories[2].CategoryType)
+	}
+
+	// 全ての期待が満たされたか確認
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
+	}
+}
+
+func TestCategoryRepository_FindAll_Error(t *testing.T) {
+	gormDB, mock := setupMockDB(t)
+
+	// エラーを返すモック
+	mock.ExpectQuery("^SELECT \\* FROM `Category` ORDER BY category_id$").
+		WillReturnError(context.DeadlineExceeded)
+
+	// テスト実行
+	repo := NewCategoryRepository(gormDB)
+	categories, err := repo.FindAll(context.Background())
+
+	// 検証
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+
+	if categories != nil {
+		t.Errorf("expected nil categories, got %v", categories)
+	}
+
+	// 全ての期待が満たされたか確認
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
+	}
 }
