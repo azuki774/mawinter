@@ -21,10 +21,11 @@ type Server struct {
 	revision        string
 	build           string
 	categoryService *application.CategoryService
+	recordService   *application.RecordService
 }
 
 // NewServer は新しい HTTP サーバを作成
-func NewServer(host string, port int, version, revision, build string, dbInfo *config.DBInfo, categoryService *application.CategoryService) *Server {
+func NewServer(host string, port int, version, revision, build string, dbInfo *config.DBInfo, categoryService *application.CategoryService, recordService *application.RecordService) *Server {
 	router := gin.Default()
 
 	// プロキシを使わない設定
@@ -39,6 +40,7 @@ func NewServer(host string, port int, version, revision, build string, dbInfo *c
 		revision:        revision,
 		build:           build,
 		categoryService: categoryService,
+		recordService:   recordService,
 	}
 
 	// OpenAPI生成のRegisterHandlersを使用してルーティングを設定
