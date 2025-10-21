@@ -1,9 +1,12 @@
-.PHONY: setup generate clean help
+.PHONY: setup generate clean bin help
 
 # 変数定義
 OPENAPI_SPEC := ../api/mawinter-api-v3.yaml
 GENERATED_DIR := ./api
 MODULE_NAME := github.com/azuki774/mawinter
+BIN_DIR := ./bin
+BINARY_NAME := mawinter
+CMD_DIR := ./cmd/mawinter
 
 help: ## ヘルプメッセージを表示
 	@echo 'Usage: make [target]'
@@ -42,7 +45,15 @@ generate: ## OpenAPI仕様からGoコードを生成
 	@echo "Code generation complete! Generated files are in $(GENERATED_DIR)/"
 	@echo ""
 
-clean: ## 生成されたファイルを削除
+bin: ## 静的バイナリをビルド
+	@echo "Building static binary..."
+	@mkdir -p $(BIN_DIR)
+	CGO_ENABLED=0 go build -a -tags netgo -ldflags '-extldflags "-static"' -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)
+	@echo ""
+	@echo "Build complete! Binary is at $(BIN_DIR)/$(BINARY_NAME)"
+
+clean: ## 生成されたファイルとバイナリを削除
 	@echo "Cleaning generated files..."
 	rm -rf $(GENERATED_DIR)
+	rm -rf $(BIN_DIR)
 	@echo "Clean complete!"
