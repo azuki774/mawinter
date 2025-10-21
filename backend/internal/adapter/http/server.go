@@ -40,7 +40,10 @@ func NewServer(host string, port int, version, revision, build string, dbInfo *c
 	}
 
 	// OpenAPI生成のRegisterHandlersを使用してルーティングを設定
-	api.RegisterHandlers(s.router, s)
+	// /api プレフィックスを追加
+	api.RegisterHandlersWithOptions(s.router, s, api.GinServerOptions{
+		BaseURL: "/api",
+	})
 
 	return s
 }
