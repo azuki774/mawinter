@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/azuki774/mawinter/api"
+	"github.com/azuki774/mawinter/internal/application"
 	"github.com/azuki774/mawinter/pkg/config"
 	"github.com/gin-gonic/gin"
 )
@@ -13,30 +14,32 @@ import (
 // Server は HTTP サーバの構造体
 // api.ServerInterface を実装する
 type Server struct {
-	router   *gin.Engine
-	host     string
-	port     int
-	dbInfo   *config.DBInfo
-	version  string
-	revision string
-	build    string
+	router          *gin.Engine
+	host            string
+	port            int
+	dbInfo          *config.DBInfo
+	version         string
+	revision        string
+	build           string
+	categoryService *application.CategoryService
 }
 
 // NewServer は新しい HTTP サーバを作成
-func NewServer(host string, port int, version, revision, build string, dbInfo *config.DBInfo) *Server {
+func NewServer(host string, port int, version, revision, build string, dbInfo *config.DBInfo, categoryService *application.CategoryService) *Server {
 	router := gin.Default()
 
 	// プロキシを使わない設定
 	router.SetTrustedProxies(nil)
 
 	s := &Server{
-		router:   router,
-		host:     host,
-		port:     port,
-		dbInfo:   dbInfo,
-		version:  version,
-		revision: revision,
-		build:    build,
+		router:          router,
+		host:            host,
+		port:            port,
+		dbInfo:          dbInfo,
+		version:         version,
+		revision:        revision,
+		build:           build,
+		categoryService: categoryService,
 	}
 
 	// OpenAPI生成のRegisterHandlersを使用してルーティングを設定
@@ -72,7 +75,24 @@ func (s *Server) Get(c *gin.Context) {
 
 // GetV3Categories - get categories (GET /v3/categories)
 func (s *Server) GetV3Categories(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
+	categories, err := s.categoryService.GetAllCategories(c.Request.Context())
+	if err != nil {
+		slog.Error("Failed to get categories", slog.String("error", err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get categories"})
+		return
+	}
+
+	// ドメインエンティティをAPIレスポンス型に変換
+	response := make([]api.Category, len(categories))
+	for i, cat := range categories {
+		response[i] = api.Category{
+			CategoryId:   cat.CategoryID,
+			CategoryName: cat.Name,
+			CategoryType: api.CategoryType(cat.CategoryType.String()),
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetV3Record - get records (GET /v3/record)

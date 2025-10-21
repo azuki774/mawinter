@@ -5,9 +5,13 @@ import (
 	"log/slog"
 
 	"github.com/azuki774/mawinter/internal/adapter/http"
+	"github.com/azuki774/mawinter/internal/adapter/repository"
+	"github.com/azuki774/mawinter/internal/application"
 	"github.com/azuki774/mawinter/pkg/config"
 	"github.com/azuki774/mawinter/pkg/logger"
 	"github.com/spf13/cobra"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 var (
@@ -61,7 +65,29 @@ func runServer(host string, port int) error {
 		slog.String("name", dbInfo.Name),
 	)
 
+	// データベース接続の初期化
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		dbInfo.User,
+		dbInfo.Pass,
+		dbInfo.Host,
+		dbInfo.Port,
+		dbInfo.Name,
+	)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		slog.Error("Failed to connect to database",
+			slog.String("error", err.Error()),
+		)
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	slog.Info("Database connection established")
+
+	// 依存性の注入
+	categoryRepo := repository.NewCategoryRepository(db)
+	categoryService := application.NewCategoryService(categoryRepo)
+
 	// HTTPサーバの起動
-	server := http.NewServer(host, port, version, revision, build, dbInfo)
+	server := http.NewServer(host, port, version, revision, build, dbInfo, categoryService)
 	return server.Start()
 }
