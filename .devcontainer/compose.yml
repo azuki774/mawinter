@@ -9,14 +9,14 @@ services:
 
     command: sleep infinity
 
-    environment:
-      - GO111MODULE=on
-      - CGO_ENABLED=0
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=password
-      - DB_NAME=mawinter
+    # environment:
+    #   - GO111MODULE=on
+    #   - CGO_ENABLED=0
+    #   - DB_HOST=db
+    #   - DB_PORT=3306
+    #   - DB_USER=root
+    #   - DB_PASSWORD=password
+    #   - DB_NAME=mawinter
 
     networks:
       - dev-network

@@ -15,14 +15,16 @@ func New() *slog.Logger {
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			// エラーレベル以上の場合、スタックトレース情報を追加
 			if a.Key == slog.LevelKey {
-				level := a.Value.Any().(slog.Level)
-				if level >= slog.LevelError {
-					// スタックトレースを取得
-					stackTrace := getStackTrace()
-					return slog.Group("error_info",
-						slog.String("level", level.String()),
-						slog.String("stack_trace", stackTrace),
-					)
+				// 型アサーションを安全に実行
+				if level, ok := a.Value.Any().(slog.Level); ok {
+					if level >= slog.LevelError {
+						// スタックトレースを取得
+						stackTrace := getStackTrace()
+						return slog.Group("error_info",
+							slog.String("level", level.String()),
+							slog.String("stack_trace", stackTrace),
+						)
+					}
 				}
 			}
 			return a

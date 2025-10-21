@@ -414,6 +414,7 @@ components:
       enum:
         - income
         - outgoing
+        - saving
         - investing
       title: category_type
       examples:

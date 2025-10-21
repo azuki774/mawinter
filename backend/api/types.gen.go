@@ -12,6 +12,7 @@ const (
 	Income    CategoryType = "income"
 	Investing CategoryType = "investing"
 	Outgoing  CategoryType = "outgoing"
+	Saving    CategoryType = "saving"
 )
 
 // Category defines model for category.
