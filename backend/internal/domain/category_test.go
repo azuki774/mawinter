@@ -19,6 +19,11 @@ func TestCategoryType_String(t *testing.T) {
 			want: "outgoing",
 		},
 		{
+			name: "saving",
+			ct:   CategoryTypeSaving,
+			want: "saving",
+		},
+		{
 			name: "investing",
 			ct:   CategoryTypeInvesting,
 			want: "investing",

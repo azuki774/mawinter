@@ -8,8 +8,10 @@ const (
 	CategoryTypeIncome CategoryType = 1
 	// CategoryTypeOutgoing は支出を表す
 	CategoryTypeOutgoing CategoryType = 2
+	// CategoryTypeSaving は貯金を表す
+	CategoryTypeSaving CategoryType = 3
 	// CategoryTypeInvesting は投資を表す
-	CategoryTypeInvesting CategoryType = 3
+	CategoryTypeInvesting CategoryType = 4
 )
 
 // String はCategoryTypeを文字列に変換する
@@ -19,6 +21,8 @@ func (ct CategoryType) String() string {
 		return "income"
 	case CategoryTypeOutgoing:
 		return "outgoing"
+	case CategoryTypeSaving:
+		return "saving"
 	case CategoryTypeInvesting:
 		return "investing"
 	default:
@@ -30,6 +34,7 @@ func (ct CategoryType) String() string {
 var CategoryTypeLookup = map[string]CategoryType{
 	"income":    CategoryTypeIncome,
 	"outgoing":  CategoryTypeOutgoing,
+	"saving":    CategoryTypeSaving,
 	"investing": CategoryTypeInvesting,
 }
 
