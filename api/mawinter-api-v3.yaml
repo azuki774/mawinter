@@ -1,0 +1,438 @@
+openapi: 3.1.0
+info:
+  version: '1.0'
+  title: mawinter-api-v3
+  summary: mawinter-api-v3
+  description: ''
+servers:
+  - url: 'http://localhost:8080'
+    description: /api
+paths:
+  /v3/:
+    get:
+      summary: health check
+      description: |-
+        health check
+        always return 'It is the root page'
+      operationId: get
+      responses:
+        '200':
+          description: OK
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+  /v3/version:
+    get:
+      summary: get version
+      operationId: get-v3-version
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  reversion:
+                    type: string
+                  build:
+                    type: string
+                required:
+                  - version
+                  - reversion
+                  - build
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+  /v3/record:
+    post:
+      summary: create record
+      description: レコードを1つ追加する
+      operationId: post-v3-record
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/req_record'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/record'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/record'
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+    get:
+      summary: get records
+      description: |-
+        idの降順にRecordを取得する。
+        デフォルトでは20件取得する。
+      operationId: get-v3-record
+      parameters:
+        - name: num
+          in: query
+          description: the number of records
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: yyyymm
+          in: query
+          schema:
+            type: string
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/record'
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+  '/v3/record/{id}':
+    get:
+      summary: get record from id
+      operationId: get-v3-record-id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/record'
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+    delete:
+      summary: delete record from id
+      operationId: delete-v3-record-id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: No Content
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+  /v3/record/count:
+    get:
+      summary: record count
+      description: 保存されているレコードの全件数を表示する。
+      operationId: get-v3-record-count
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/record_count'
+              examples:
+                Example 1:
+                  value:
+                    num: 1234
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+  /v3/record/available:
+    get:
+      summary: record available
+      description: "このDBに登録されているレコード全体の、年月（YYYYMM）と Fiscal Year(fy) の一覧を返却する。\r\nいずれのレスポンスの配列も、新しい順にソートされている。"
+      operationId: get-v3-record-available
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fy:
+                    type: array
+                    items:
+                      type: string
+                      examples:
+                        - '2025'
+                  yyyymm:
+                    type: array
+                    items:
+                      type: string
+                      examples:
+                        - '202501'
+              examples:
+                Example 1:
+                  value:
+                    fy:
+                      - '2024'
+                      - '2023'
+                    yyyymm:
+                      - '202502'
+                      - '202501'
+                      - '202412'
+                      - '202403'
+                      - '202312'
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+  '/v3/record/summary/{year}':
+    get:
+      summary: get year summary
+      description: year 年度のサマリーを表示する
+      operationId: get-v3-record-year
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/category_year_summary'
+              examples:
+                Example 1:
+                  value:
+                    - category_id: 201
+                      category_name: 食費
+                      category_type: outgoing
+                      count: 24
+                      price:
+                        - 40
+                        - 50
+                        - 60
+                        - 70
+                        - 80
+                        - 90
+                        - 100
+                        - 110
+                        - 120
+                        - 10
+                        - 20
+                        - 30
+                      total: 780
+                    - category_id: 202
+                      category_name: なんとか費
+                      category_type: outgoing
+                      count: 24
+                      price:
+                        - 40
+                        - 50
+                        - 60
+                        - 70
+                        - 80
+                        - 90
+                        - 100
+                        - 110
+                        - 120
+                        - 10
+                        - 20
+                        - 30
+                      total: 780
+        '404':
+          description: Not Found
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+  /v3/categories:
+    get:
+      summary: get categories
+      operationId: get-v3-categories
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/category'
+              examples:
+                Example 1:
+                  value:
+                    - category_id: 100
+                      category_name: 収入
+                      category_type: income
+                    - category_id: 200
+                      category_name: 家賃
+                      category_type: outgoing
+                    - category_id: 700
+                      category_name: 投資
+                      category_type: investing
+      servers:
+        - url: 'http://localhost:8080'
+          description: /api
+components:
+  schemas:
+    req_record:
+      type: object
+      title: req_record
+      properties:
+        category_id:
+          type: integer
+        price:
+          type: integer
+        datetime:
+          type: string
+          pattern: '[0-9]'
+          examples:
+            - '20060102'
+        from:
+          type: string
+        type:
+          type: string
+        memo:
+          type: string
+      required:
+        - category_id
+        - price
+      examples:
+        - category_id: 120
+          datetime: '20230101'
+          from: discord
+          type: ''
+          price: 210
+          memo: ''
+    record:
+      type: object
+      title: record
+      properties:
+        id:
+          type: integer
+        category_id:
+          type: integer
+        category_name:
+          type: string
+        datetime:
+          type: string
+          format: date-time
+        from:
+          type: string
+        type:
+          type: string
+        price:
+          type: integer
+        memo:
+          type: string
+      required:
+        - id
+        - category_id
+        - category_name
+        - datetime
+        - from
+        - type
+        - price
+        - memo
+      examples: []
+    record_count:
+      type: object
+      title: record_count
+      properties:
+        num:
+          type: integer
+    category_year_summary:
+      type: object
+      title: category_year_summary
+      properties:
+        category_id:
+          type: integer
+        category_name:
+          type: string
+        category_type:
+          $ref: '#/components/schemas/category_type'
+        count:
+          type: integer
+        price:
+          type: array
+          minItems: 12
+          maxItems: 12
+          items:
+            type: integer
+            default: 0
+            examples:
+              - 300
+        total:
+          type: integer
+      required:
+        - category_id
+        - category_name
+        - category_type
+        - count
+        - price
+        - total
+      examples:
+        - category_id: 201
+          category_name: 食費
+          category_type: outgoing
+          count: 24
+          price:
+            - 40
+            - 50
+            - 60
+            - 70
+            - 80
+            - 90
+            - 100
+            - 110
+            - 120
+            - 10
+            - 20
+            - 30
+          total: 780
+    category_type:
+      type: string
+      enum:
+        - income
+        - outgoing
+        - investing
+      title: category_type
+      examples:
+        - income
+    category:
+      type: object
+      title: category
+      properties:
+        category_id:
+          type: integer
+        category_name:
+          type: string
+        category_type:
+          $ref: '#/components/schemas/category_type'
+      required:
+        - category_id
+        - category_name
+        - category_type
+      examples:
+        - category_id: 0
+          category_name: string
+          category_type: income
