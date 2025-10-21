@@ -1,0 +1,127 @@
+{
+  "name": "mawinter (Go + Nuxt + MySQL)",
+  "dockerComposeFile": "compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "updateRemoteUserUID": true,
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.23"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "installDirectlyFromGitHubRelease": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "username": "vscode",
+      "userUid": "automatic",
+      "userGid": "automatic"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "Vue.volar",
+        "Vue.vscode-typescript-vue-plugin",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mysql",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "EditorConfig.EditorConfig",
+        "42Crunch.vscode-openapi",
+        "eamodio.gitlens",
+        "GitHub.vscode-pull-request-github",
+        "usernamehw.errorlens",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "go.toolsManagement.autoUpdate": true,
+        "go.useLanguageServer": true,
+        "go.lintTool": "golangci-lint",
+        "go.lintOnSave": "workspace",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "[go]": {
+          "editor.defaultFormatter": "golang.go",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "[vue]": {
+          "editor.defaultFormatter": "Vue.volar"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[yaml]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "sqltools.connections": [
+          {
+            "name": "MySQL - mawinter_dev",
+            "driver": "MySQL",
+            "server": "db",
+            "port": 3306,
+            "database": "mawinter_dev",
+            "username": "mawinter",
+            "password": "password"
+          }
+        ],
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.watcherExclude": {
+          "**/.git/objects/**": true,
+          "**/.git/subtree-cache/**": true,
+          "**/node_modules/**": true,
+          "**/.nuxt/**": true,
+          "**/dist/**": true
+        }
+      }
+    }
+  },
+  "forwardPorts": [
+    8080,
+    3000,
+    3306
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "Backend API",
+      "onAutoForward": "notify"
+    },
+    "3000": {
+      "label": "Frontend (Nuxt)",
+      "onAutoForward": "openBrowser"
+    },
+    "3306": {
+      "label": "MySQL",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+    "DB_HOST": "db",
+    "DB_PORT": "3306",
+    "DB_USER": "root",
+    "DB_PASSWORD": "password",
+    "DB_NAME": "mawinter",
+    "GO111MODULE": "on",
+    "GOPATH": "/home/vscode/go"
+  },
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,readonly,type=bind,consistency=cached"
+  ]
+}

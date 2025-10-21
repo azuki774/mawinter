@@ -1,0 +1,61 @@
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+
+    volumes:
+      - ..:/workspace:cached
+      - go-modules:/go/pkg/mod
+      - node-modules:/workspace/frontend/node_modules
+
+    command: sleep infinity
+
+    environment:
+      - GO111MODULE=on
+      - CGO_ENABLED=0
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=mawinter
+
+    networks:
+      - dev-network
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:10.11.14
+    restart: unless-stopped
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: mawinter
+
+    ports:
+      - "3306:3306"
+
+    networks:
+      - dev-network
+
+    command: --default-authentication-plugin=mysql_native_password
+
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  dev-network:
+
+
+volumes:
+  mysql-data:
+  go-modules:
+  node-modules:
