@@ -2,8 +2,10 @@ package http
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
+	"github.com/azuki774/mawinter/pkg/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,10 +14,12 @@ type Server struct {
 	router *gin.Engine
 	host   string
 	port   int
+	logger *slog.Logger
+	dbInfo *config.DBInfo
 }
 
 // NewServer は新しい HTTP サーバを作成
-func NewServer(host string, port int, version, revision, build string) *Server {
+func NewServer(host string, port int, version, revision, build string, logger *slog.Logger, dbInfo *config.DBInfo) *Server {
 	router := gin.Default()
 
 	// プロキシを使わない設定
@@ -25,6 +29,8 @@ func NewServer(host string, port int, version, revision, build string) *Server {
 		router: router,
 		host:   host,
 		port:   port,
+		logger: logger,
+		dbInfo: dbInfo,
 	}
 
 	s.setupRoutes()
@@ -51,7 +57,16 @@ func (s *Server) setupRoutes() {
 // Start はサーバを起動
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.host, s.port)
-	return s.router.Run(addr)
+	s.logger.Info("HTTP server starting", slog.String("address", addr))
+
+	if err := s.router.Run(addr); err != nil {
+		s.logger.Error("Failed to start HTTP server",
+			slog.String("address", addr),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+	return nil
 }
 
 // ハンドラー関数（すべて空の実装）
