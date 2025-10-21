@@ -95,7 +95,7 @@
       }
     }
   },
-  "forwardPorts": [8080, 3000, 3306],
+  "forwardPorts": [8080, 3000, 3306, 8081],
   "portsAttributes": {
     "8080": {
       "label": "Backend API",
@@ -108,6 +108,10 @@
     "3306": {
       "label": "MySQL",
       "onAutoForward": "silent"
+    },
+    "8081": {
+      "label": "phpMyAdmin",
+      "onAutoForward": "notify"
     }
   },
   "postCreateCommand": "bash .devcontainer/setup.sh",

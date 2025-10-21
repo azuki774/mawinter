@@ -46,14 +46,40 @@ services:
     command: --default-authentication-plugin=mysql_native_password
 
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword" ]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-ppassword",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: password
+      UPLOAD_LIMIT: 64M
+
+    ports:
+      - "8081:80"
+
+    networks:
+      - dev-network
+
 networks:
   dev-network:
-
 
 volumes:
   mysql-data:
