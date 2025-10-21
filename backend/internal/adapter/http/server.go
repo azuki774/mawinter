@@ -15,8 +15,11 @@ type Server struct {
 }
 
 // NewServer は新しい HTTP サーバを作成
-func NewServer(host string, port int) *Server {
+func NewServer(host string, port int, version, revision, build string) *Server {
 	router := gin.Default()
+
+	// プロキシを使わない設定
+	router.SetTrustedProxies(nil)
 
 	s := &Server{
 		router: router,
@@ -90,5 +93,5 @@ func (s *Server) getRecordId(c *gin.Context) {
 }
 
 func (s *Server) getVersion(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"version": "v3.0.0"})
+	c.JSON(http.StatusOK, gin.H{})
 }

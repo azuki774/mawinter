@@ -32,8 +32,9 @@ var serveCmd = &cobra.Command{
 
 func runServer(host string, port int) error {
 	fmt.Printf("Starting server on %s:%d\n", host, port)
+	fmt.Printf("Version: %s, Revision: %s, Build: %s\n", version, revision, build)
 
 	// HTTPサーバの起動
-	server := http.NewServer(host, port)
+	server := http.NewServer(host, port, version, revision, build)
 	return server.Start()
 }
