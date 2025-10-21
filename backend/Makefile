@@ -1,4 +1,4 @@
-.PHONY: setup generate clean bin help
+.PHONY: setup generate clean bin test help
 
 # 変数定義
 OPENAPI_SPEC := ../api/mawinter-api-v3.yaml
@@ -46,14 +46,17 @@ generate: ## OpenAPI仕様からGoコードを生成
 	@echo ""
 
 bin: ## 静的バイナリをビルド
-	@echo "Building static binary..."
 	@mkdir -p $(BIN_DIR)
-	CGO_ENABLED=0 go build -a -tags netgo -ldflags '-extldflags "-static"' -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)
-	@echo ""
-	@echo "Build complete! Binary is at $(BIN_DIR)/$(BINARY_NAME)"
+	CGO_ENABLED=0 go build -a -tags netgo \
+		-ldflags "-extldflags '-static' \
+		-X main.version=$$(git describe --tag --abbrev=0 2>/dev/null || echo 'dev') \
+		-X main.revision=$$(git rev-list -1 HEAD) \
+		-X main.build=$$(git describe --tags 2>/dev/null || echo 'dev')" \
+		-o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)
+
+test: ## テストを実行
+	go test -v ./...
 
 clean: ## 生成されたファイルとバイナリを削除
-	@echo "Cleaning generated files..."
 	rm -rf $(GENERATED_DIR)
 	rm -rf $(BIN_DIR)
-	@echo "Clean complete!"

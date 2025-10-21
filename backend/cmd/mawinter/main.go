@@ -7,6 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ビルド時に埋め込まれるバージョン情報
+var (
+	version  = "dev"
+	revision = "unknown"
+	build    = "dev"
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "mawinter",
 	Short: "Mawinter - 家計簿サーバ",
@@ -14,6 +21,7 @@ var rootCmd = &cobra.Command{
 }
 
 func main() {
+	fmt.Printf("Version: %s, Revision: %s, Build: %s\n", version, revision, build)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
