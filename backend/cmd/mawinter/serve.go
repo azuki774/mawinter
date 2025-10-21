@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/azuki774/mawinter/internal/adapter/http"
+	"github.com/azuki774/mawinter/pkg/config"
+	"github.com/azuki774/mawinter/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -31,10 +34,34 @@ var serveCmd = &cobra.Command{
 }
 
 func runServer(host string, port int) error {
-	fmt.Printf("Starting server on %s:%d\n", host, port)
-	fmt.Printf("Version: %s, Revision: %s, Build: %s\n", version, revision, build)
+	// デフォルトロガーの初期化
+	slog.SetDefault(logger.New())
+
+	slog.Info("Starting Mawinter server",
+		slog.String("host", host),
+		slog.Int("port", port),
+		slog.String("version", version),
+		slog.String("revision", revision),
+		slog.String("build", build),
+	)
+
+	// データベース設定の読み込み
+	dbInfo, err := config.LoadDBInfo()
+	if err != nil {
+		slog.Error("Failed to load database configuration",
+			slog.String("error", err.Error()),
+		)
+		return fmt.Errorf("failed to load database configuration: %w", err)
+	}
+
+	slog.Info("Database configuration loaded",
+		slog.String("host", dbInfo.Host),
+		slog.String("port", dbInfo.Port),
+		slog.String("user", dbInfo.User),
+		slog.String("name", dbInfo.Name),
+	)
 
 	// HTTPサーバの起動
-	server := http.NewServer(host, port, version, revision, build)
+	server := http.NewServer(host, port, version, revision, build, dbInfo)
 	return server.Start()
 }

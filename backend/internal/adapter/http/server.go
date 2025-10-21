@@ -2,96 +2,123 @@ package http
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
+	"github.com/azuki774/mawinter/api"
+	"github.com/azuki774/mawinter/pkg/config"
 	"github.com/gin-gonic/gin"
 )
 
 // Server は HTTP サーバの構造体
+// api.ServerInterface を実装する
 type Server struct {
-	router *gin.Engine
-	host   string
-	port   int
+	router   *gin.Engine
+	host     string
+	port     int
+	dbInfo   *config.DBInfo
+	version  string
+	revision string
+	build    string
 }
 
 // NewServer は新しい HTTP サーバを作成
-func NewServer(host string, port int, version, revision, build string) *Server {
+func NewServer(host string, port int, version, revision, build string, dbInfo *config.DBInfo) *Server {
 	router := gin.Default()
 
 	// プロキシを使わない設定
 	router.SetTrustedProxies(nil)
 
 	s := &Server{
-		router: router,
-		host:   host,
-		port:   port,
+		router:   router,
+		host:     host,
+		port:     port,
+		dbInfo:   dbInfo,
+		version:  version,
+		revision: revision,
+		build:    build,
 	}
 
-	s.setupRoutes()
+	// OpenAPI生成のRegisterHandlersを使用してルーティングを設定
+	// /api プレフィックスを追加
+	api.RegisterHandlersWithOptions(s.router, s, api.GinServerOptions{
+		BaseURL: "/api",
+	})
+
 	return s
-}
-
-// setupRoutes はルーティングを設定
-func (s *Server) setupRoutes() {
-	// ヘルスチェックエンドポイント
-	s.router.GET("/v3/", s.healthCheck)
-
-	// 他のエンドポイントは空の実装
-	s.router.GET("/v3/categories", s.getCategories)
-	s.router.GET("/v3/record", s.getRecord)
-	s.router.POST("/v3/record", s.postRecord)
-	s.router.GET("/v3/record/available", s.getRecordAvailable)
-	s.router.GET("/v3/record/count", s.getRecordCount)
-	s.router.GET("/v3/record/summary/:year", s.getRecordYear)
-	s.router.DELETE("/v3/record/:id", s.deleteRecordId)
-	s.router.GET("/v3/record/:id", s.getRecordId)
-	s.router.GET("/v3/version", s.getVersion)
 }
 
 // Start はサーバを起動
 func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.host, s.port)
-	return s.router.Run(addr)
+	slog.Info("HTTP server starting", slog.String("address", addr))
+
+	if err := s.router.Run(addr); err != nil {
+		slog.Error("Failed to start HTTP server",
+			slog.String("address", addr),
+			slog.String("error", err.Error()),
+		)
+		return err
+	}
+	return nil
 }
 
-// ハンドラー関数（すべて空の実装）
+// 以下、api.ServerInterface の実装
 
-func (s *Server) healthCheck(c *gin.Context) {
+// Get - health check (GET /v3/)
+func (s *Server) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-func (s *Server) getCategories(c *gin.Context) {
+// GetV3Categories - get categories (GET /v3/categories)
+func (s *Server) GetV3Categories(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
 
-func (s *Server) getRecord(c *gin.Context) {
+// GetV3Record - get records (GET /v3/record)
+func (s *Server) GetV3Record(c *gin.Context, params api.GetV3RecordParams) {
+	// params には num, offset, yyyymm, category_id が含まれる
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
 
-func (s *Server) postRecord(c *gin.Context) {
+// PostV3Record - create record (POST /v3/record)
+func (s *Server) PostV3Record(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
 
-func (s *Server) getRecordAvailable(c *gin.Context) {
+// GetV3RecordAvailable - record available (GET /v3/record/available)
+func (s *Server) GetV3RecordAvailable(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
 
-func (s *Server) getRecordCount(c *gin.Context) {
+// GetV3RecordCount - record count (GET /v3/record/count)
+func (s *Server) GetV3RecordCount(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
 
-func (s *Server) getRecordYear(c *gin.Context) {
+// GetV3RecordYear - get year summary (GET /v3/record/summary/{year})
+func (s *Server) GetV3RecordYear(c *gin.Context, year int) {
+	// year パラメータは自動的にパースされて渡される
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
 
-func (s *Server) deleteRecordId(c *gin.Context) {
+// DeleteV3RecordId - delete record from id (DELETE /v3/record/{id})
+func (s *Server) DeleteV3RecordId(c *gin.Context, id int) {
+	// id パラメータは自動的にパースされて渡される
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
 
-func (s *Server) getRecordId(c *gin.Context) {
+// GetV3RecordId - get record from id (GET /v3/record/{id})
+func (s *Server) GetV3RecordId(c *gin.Context, id int) {
+	// id パラメータは自動的にパースされて渡される
 	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
 }
 
-func (s *Server) getVersion(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{})
+// GetV3Version - get version (GET /v3/version)
+func (s *Server) GetV3Version(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"version":   s.version,
+		"reversion": s.revision,
+		"build":     s.build,
+	})
 }
