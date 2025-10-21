@@ -75,12 +75,12 @@
         },
         "sqltools.connections": [
           {
-            "name": "MySQL - mawinter_dev",
+            "name": "MySQL - mawinter",
             "driver": "MySQL",
             "server": "db",
             "port": 3306,
-            "database": "mawinter_dev",
-            "username": "mawinter",
+            "database": "mawinter",
+            "username": "root",
             "password": "password"
           }
         ],
