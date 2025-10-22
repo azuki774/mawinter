@@ -12,95 +12,167 @@ import (
 
 func TestRecordModel_ToDomain(t *testing.T) {
 	now := time.Now()
-	model := &RecordModel{
-		ID:         1,
-		CategoryID: 210,
-		Datetime:   now,
-		From:       "test-from",
-		Type:       "test-type",
-		Price:      1234,
-		Memo:       "test-memo",
+	tests := []struct {
+		name         string
+		model        *RecordModel
+		categoryName string
+		want         *domain.Record
+	}{
+		{
+			name: "正常系: モデルからドメインへの変換",
+			model: &RecordModel{
+				ID:         1,
+				CategoryID: 210,
+				Datetime:   now,
+				From:       "test-from",
+				Type:       "test-type",
+				Price:      1234,
+				Memo:       "test-memo",
+			},
+			categoryName: "食費",
+			want: &domain.Record{
+				ID:           1,
+				CategoryID:   210,
+				CategoryName: "食費",
+				Datetime:     now,
+				From:         "test-from",
+				Type:         "test-type",
+				Price:        1234,
+				Memo:         "test-memo",
+			},
+		},
 	}
 
-	record := model.ToDomain("食費")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			record := tt.model.ToDomain(tt.categoryName)
 
-	if record.ID != 1 {
-		t.Errorf("expected ID 1, got %d", record.ID)
-	}
-	if record.CategoryID != 210 {
-		t.Errorf("expected CategoryID 210, got %d", record.CategoryID)
-	}
-	if record.CategoryName != "食費" {
-		t.Errorf("expected CategoryName '食費', got '%s'", record.CategoryName)
-	}
-	if !record.Datetime.Equal(now) {
-		t.Errorf("expected Datetime %v, got %v", now, record.Datetime)
-	}
-	if record.From != "test-from" {
-		t.Errorf("expected From 'test-from', got '%s'", record.From)
-	}
-	if record.Type != "test-type" {
-		t.Errorf("expected Type 'test-type', got '%s'", record.Type)
-	}
-	if record.Price != 1234 {
-		t.Errorf("expected Price 1234, got %d", record.Price)
-	}
-	if record.Memo != "test-memo" {
-		t.Errorf("expected Memo 'test-memo', got '%s'", record.Memo)
+			if record.ID != tt.want.ID {
+				t.Errorf("expected ID %d, got %d", tt.want.ID, record.ID)
+			}
+			if record.CategoryID != tt.want.CategoryID {
+				t.Errorf("expected CategoryID %d, got %d", tt.want.CategoryID, record.CategoryID)
+			}
+			if record.CategoryName != tt.want.CategoryName {
+				t.Errorf("expected CategoryName '%s', got '%s'", tt.want.CategoryName, record.CategoryName)
+			}
+			if !record.Datetime.Equal(tt.want.Datetime) {
+				t.Errorf("expected Datetime %v, got %v", tt.want.Datetime, record.Datetime)
+			}
+			if record.From != tt.want.From {
+				t.Errorf("expected From '%s', got '%s'", tt.want.From, record.From)
+			}
+			if record.Type != tt.want.Type {
+				t.Errorf("expected Type '%s', got '%s'", tt.want.Type, record.Type)
+			}
+			if record.Price != tt.want.Price {
+				t.Errorf("expected Price %d, got %d", tt.want.Price, record.Price)
+			}
+			if record.Memo != tt.want.Memo {
+				t.Errorf("expected Memo '%s', got '%s'", tt.want.Memo, record.Memo)
+			}
+		})
 	}
 }
 
 func TestRecordModel_FromDomain(t *testing.T) {
 	now := time.Now()
-	record := &domain.Record{
-		ID:           1,
-		CategoryID:   210,
-		CategoryName: "食費",
-		Datetime:     now,
-		From:         "test-from",
-		Type:         "test-type",
-		Price:        1234,
-		Memo:         "test-memo",
+	tests := []struct {
+		name   string
+		record *domain.Record
+		want   *RecordModel
+	}{
+		{
+			name: "正常系: ドメインからモデルへの変換",
+			record: &domain.Record{
+				ID:           1,
+				CategoryID:   210,
+				CategoryName: "食費",
+				Datetime:     now,
+				From:         "test-from",
+				Type:         "test-type",
+				Price:        1234,
+				Memo:         "test-memo",
+			},
+			want: &RecordModel{
+				ID:         1,
+				CategoryID: 210,
+				Datetime:   now,
+				From:       "test-from",
+				Type:       "test-type",
+				Price:      1234,
+				Memo:       "test-memo",
+			},
+		},
 	}
 
-	model := &RecordModel{}
-	model.FromDomain(record)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := &RecordModel{}
+			model.FromDomain(tt.record)
 
-	if model.ID != 1 {
-		t.Errorf("expected ID 1, got %d", model.ID)
-	}
-	if model.CategoryID != 210 {
-		t.Errorf("expected CategoryID 210, got %d", model.CategoryID)
-	}
-	if !model.Datetime.Equal(now) {
-		t.Errorf("expected Datetime %v, got %v", now, model.Datetime)
-	}
-	if model.From != "test-from" {
-		t.Errorf("expected From 'test-from', got '%s'", model.From)
-	}
-	if model.Type != "test-type" {
-		t.Errorf("expected Type 'test-type', got '%s'", model.Type)
-	}
-	if model.Price != 1234 {
-		t.Errorf("expected Price 1234, got %d", model.Price)
-	}
-	if model.Memo != "test-memo" {
-		t.Errorf("expected Memo 'test-memo', got '%s'", model.Memo)
+			if model.ID != tt.want.ID {
+				t.Errorf("expected ID %d, got %d", tt.want.ID, model.ID)
+			}
+			if model.CategoryID != tt.want.CategoryID {
+				t.Errorf("expected CategoryID %d, got %d", tt.want.CategoryID, model.CategoryID)
+			}
+			if !model.Datetime.Equal(tt.want.Datetime) {
+				t.Errorf("expected Datetime %v, got %v", tt.want.Datetime, model.Datetime)
+			}
+			if model.From != tt.want.From {
+				t.Errorf("expected From '%s', got '%s'", tt.want.From, model.From)
+			}
+			if model.Type != tt.want.Type {
+				t.Errorf("expected Type '%s', got '%s'", tt.want.Type, model.Type)
+			}
+			if model.Price != tt.want.Price {
+				t.Errorf("expected Price %d, got %d", tt.want.Price, model.Price)
+			}
+			if model.Memo != tt.want.Memo {
+				t.Errorf("expected Memo '%s', got '%s'", tt.want.Memo, model.Memo)
+			}
+		})
 	}
 }
 
 func TestRecordModel_TableName(t *testing.T) {
-	model := RecordModel{}
-	if model.TableName() != "Record" {
-		t.Errorf("expected table name 'Record', got '%s'", model.TableName())
+	tests := []struct {
+		name string
+		want string
+	}{
+		{
+			name: "正常系: テーブル名を取得",
+			want: "Record",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := RecordModel{}
+			if got := model.TableName(); got != tt.want {
+				t.Errorf("TableName() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestNewRecordRepository(t *testing.T) {
-	// nilチェック
-	repo := NewRecordRepository(nil)
-	if repo == nil {
-		t.Error("expected non-nil repository")
+	tests := []struct {
+		name string
+	}{
+		{
+			name: "正常系: リポジトリが生成される",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := NewRecordRepository(nil)
+			if repo == nil {
+				t.Error("expected non-nil repository")
+			}
+		})
 	}
 }
 

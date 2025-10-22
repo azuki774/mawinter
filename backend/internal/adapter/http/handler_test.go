@@ -56,84 +56,82 @@ func (m *mockRecordRepository) Delete(ctx context.Context, id int) error {
 func TestGetV3Categories(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	t.Run("正常系: カテゴリ一覧を取得できる", func(t *testing.T) {
-		// モックデータの準備
-		mockRepo := &mockCategoryRepository{
-			categories: []*domain.Category{
-				{ID: 1, CategoryID: 100, Name: "月給", CategoryType: domain.CategoryTypeIncome},
-				{ID: 2, CategoryID: 200, Name: "家賃", CategoryType: domain.CategoryTypeOutgoing},
-				{ID: 3, CategoryID: 700, Name: "NISA入出金", CategoryType: domain.CategoryTypeInvesting},
+	tests := []struct {
+		name               string
+		mockRepo           *mockCategoryRepository
+		wantStatusCode     int
+		wantCategoryCount  int
+		checkResponseFunc  func(t *testing.T, response []api.Category)
+	}{
+		{
+			name: "正常系: カテゴリ一覧を取得できる",
+			mockRepo: &mockCategoryRepository{
+				categories: []*domain.Category{
+					{ID: 1, CategoryID: 100, Name: "月給", CategoryType: domain.CategoryTypeIncome},
+					{ID: 2, CategoryID: 200, Name: "家賃", CategoryType: domain.CategoryTypeOutgoing},
+					{ID: 3, CategoryID: 700, Name: "NISA入出金", CategoryType: domain.CategoryTypeInvesting},
+				},
 			},
-		}
+			wantStatusCode:    http.StatusOK,
+			wantCategoryCount: 3,
+			checkResponseFunc: func(t *testing.T, response []api.Category) {
+				if response[0].CategoryId != 100 {
+					t.Errorf("expected category_id 100, got %d", response[0].CategoryId)
+				}
+				if response[0].CategoryName != "月給" {
+					t.Errorf("expected category_name '月給', got '%s'", response[0].CategoryName)
+				}
+				if response[0].CategoryType != "income" {
+					t.Errorf("expected category_type 'income', got '%s'", response[0].CategoryType)
+				}
+				if response[1].CategoryType != "outgoing" {
+					t.Errorf("expected category_type 'outgoing', got '%s'", response[1].CategoryType)
+				}
+				if response[2].CategoryType != "investing" {
+					t.Errorf("expected category_type 'investing', got '%s'", response[2].CategoryType)
+				}
+			},
+		},
+		{
+			name: "異常系: リポジトリエラー",
+			mockRepo: &mockCategoryRepository{
+				err: context.DeadlineExceeded,
+			},
+			wantStatusCode:    http.StatusInternalServerError,
+			wantCategoryCount: 0,
+			checkResponseFunc: nil,
+		},
+	}
 
-		categoryService := application.NewCategoryService(mockRepo)
-		recordService := application.NewRecordService(&mockRecordRepository{})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			categoryService := application.NewCategoryService(tt.mockRepo)
+			recordService := application.NewRecordService(&mockRecordRepository{})
+			dbInfo := &config.DBInfo{}
+			server := NewServer("localhost", 8080, "v1.0.0", "abc123", "20250101", dbInfo, categoryService, recordService)
 
-		// サーバの作成
-		dbInfo := &config.DBInfo{}
-		server := NewServer("localhost", 8080, "v1.0.0", "abc123", "20250101", dbInfo, categoryService, recordService)
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/api/v3/categories", nil)
+			server.router.ServeHTTP(w, req)
 
-		// テストリクエスト
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/v3/categories", nil)
-		server.router.ServeHTTP(w, req)
+			if w.Code != tt.wantStatusCode {
+				t.Errorf("expected status code %d, got %d", tt.wantStatusCode, w.Code)
+			}
 
-		// ステータスコードの確認
-		if w.Code != http.StatusOK {
-			t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
-		}
+			if tt.wantStatusCode == http.StatusOK {
+				var response []api.Category
+				if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+					t.Fatalf("failed to unmarshal response: %v", err)
+				}
 
-		// レスポンスボディの確認
-		var response []api.Category
-		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
-			t.Fatalf("failed to unmarshal response: %v", err)
-		}
+				if len(response) != tt.wantCategoryCount {
+					t.Errorf("expected %d categories, got %d", tt.wantCategoryCount, len(response))
+				}
 
-		if len(response) != 3 {
-			t.Errorf("expected 3 categories, got %d", len(response))
-		}
-
-		// 最初のカテゴリの確認
-		if response[0].CategoryId != 100 {
-			t.Errorf("expected category_id 100, got %d", response[0].CategoryId)
-		}
-		if response[0].CategoryName != "月給" {
-			t.Errorf("expected category_name '月給', got '%s'", response[0].CategoryName)
-		}
-		if response[0].CategoryType != "income" {
-			t.Errorf("expected category_type 'income', got '%s'", response[0].CategoryType)
-		}
-
-		// 2番目のカテゴリの確認
-		if response[1].CategoryType != "outgoing" {
-			t.Errorf("expected category_type 'outgoing', got '%s'", response[1].CategoryType)
-		}
-
-		// 3番目のカテゴリの確認
-		if response[2].CategoryType != "investing" {
-			t.Errorf("expected category_type 'investing', got '%s'", response[2].CategoryType)
-		}
-	})
-
-	t.Run("異常系: リポジトリエラー", func(t *testing.T) {
-		// エラーを返すモック
-		mockRepo := &mockCategoryRepository{
-			err: context.DeadlineExceeded,
-		}
-
-		categoryService := application.NewCategoryService(mockRepo)
-		recordService := application.NewRecordService(&mockRecordRepository{})
-		dbInfo := &config.DBInfo{}
-		server := NewServer("localhost", 8080, "v1.0.0", "abc123", "20250101", dbInfo, categoryService, recordService)
-
-		// テストリクエスト
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/v3/categories", nil)
-		server.router.ServeHTTP(w, req)
-
-		// エラー時は500を返す
-		if w.Code != http.StatusInternalServerError {
-			t.Errorf("expected status code %d, got %d", http.StatusInternalServerError, w.Code)
-		}
-	})
+				if tt.checkResponseFunc != nil {
+					tt.checkResponseFunc(t, response)
+				}
+			}
+		})
+	}
 }
