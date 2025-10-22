@@ -12,41 +12,85 @@ import (
 )
 
 func TestCategoryModel_ToDomain(t *testing.T) {
-	model := &CategoryModel{
-		ID:           1,
-		CategoryID:   100,
-		Name:         "月給",
-		CategoryType: 1,
+	tests := []struct {
+		name  string
+		model *CategoryModel
+		want  *domain.Category
+	}{
+		{
+			name: "正常系: モデルからドメインへの変換",
+			model: &CategoryModel{
+				ID:           1,
+				CategoryID:   100,
+				Name:         "月給",
+				CategoryType: 1,
+			},
+			want: &domain.Category{
+				ID:           1,
+				CategoryID:   100,
+				Name:         "月給",
+				CategoryType: domain.CategoryTypeIncome,
+			},
+		},
 	}
 
-	category := model.ToDomain()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			category := tt.model.ToDomain()
 
-	if category.ID != 1 {
-		t.Errorf("expected ID 1, got %d", category.ID)
-	}
-	if category.CategoryID != 100 {
-		t.Errorf("expected CategoryID 100, got %d", category.CategoryID)
-	}
-	if category.Name != "月給" {
-		t.Errorf("expected Name '月給', got '%s'", category.Name)
-	}
-	if category.CategoryType != domain.CategoryTypeIncome {
-		t.Errorf("expected CategoryType Income, got %v", category.CategoryType)
+			if category.ID != tt.want.ID {
+				t.Errorf("expected ID %d, got %d", tt.want.ID, category.ID)
+			}
+			if category.CategoryID != tt.want.CategoryID {
+				t.Errorf("expected CategoryID %d, got %d", tt.want.CategoryID, category.CategoryID)
+			}
+			if category.Name != tt.want.Name {
+				t.Errorf("expected Name '%s', got '%s'", tt.want.Name, category.Name)
+			}
+			if category.CategoryType != tt.want.CategoryType {
+				t.Errorf("expected CategoryType %v, got %v", tt.want.CategoryType, category.CategoryType)
+			}
+		})
 	}
 }
 
 func TestCategoryModel_TableName(t *testing.T) {
-	model := CategoryModel{}
-	if model.TableName() != "Category" {
-		t.Errorf("expected table name 'Category', got '%s'", model.TableName())
+	tests := []struct {
+		name string
+		want string
+	}{
+		{
+			name: "正常系: テーブル名を取得",
+			want: "Category",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := CategoryModel{}
+			if got := model.TableName(); got != tt.want {
+				t.Errorf("TableName() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestNewCategoryRepository(t *testing.T) {
-	// nilチェック
-	repo := NewCategoryRepository(nil)
-	if repo == nil {
-		t.Error("expected non-nil repository")
+	tests := []struct {
+		name string
+	}{
+		{
+			name: "正常系: リポジトリが生成される",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := NewCategoryRepository(nil)
+			if repo == nil {
+				t.Error("expected non-nil repository")
+			}
+		})
 	}
 }
 

@@ -11,9 +11,8 @@
 - 必要でないファイルまで、git ステージングしないでください。
 - ヘキサゴナルアーキテクチャの依存関係の方向を厳守してください (domain は外部に依存しない)。
 - OpenAPI 仕様を変更した場合は必ず `make generate` を実行してください。
-
-## PR の作成方法
-- バックエンド(Go)を変更する場合は、都度、make test コマンドを行い、テストが通ることを確認してください。
+- バックエンド(Go)を変更する場合は、都度、`make test` コマンドを行い、テストが通ることを確認してください。
+- PR の本文は日本語で書いてください。
 - コミットメッセージは英語で書いてください。
 - **コミットメッセージは1行程度で書いてください。**
 
@@ -22,6 +21,117 @@
 - いかなる出力にも、絵文字は使わないでください。
 - 生成されたファイル (`*.gen.go`) は直接編集しないでください。OpenAPI 仕様を変更してから再生成してください。
 - 「TODOファイルを消化して」と言われたときは、.claude/TODO.md を見て対応してください。
+
+## テストコーディング規約
+
+### Go テストの記述形式
+- **必ずテーブルドリブン形式で記述してください**
+- すべてのテストケースは `tests` スライスにまとめ、`for _, tt := range tests` でループさせます
+- 各テストケースには `name` フィールドを必ず含めます
+- `t.Run(tt.name, func(t *testing.T) { ... })` を使用してサブテストとして実行します
+
+### テーブルドリブンテストの基本形式
+
+```go
+func TestFunctionName(t *testing.T) {
+	tests := []struct {
+		name string
+		// テストに必要な入力パラメータ
+		args args
+		// 期待する結果
+		want expectedType
+		// エラー期待フラグ
+		wantErr bool
+	}{
+		{
+			name: "正常系: 説明",
+			args: args{
+				// 入力値
+			},
+			want: expectedValue,
+			wantErr: false,
+		},
+		{
+			name: "異常系: 説明",
+			args: args{
+				// 入力値
+			},
+			want: expectedValue,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// テスト実行
+			got, err := FunctionName(tt.args.param1, tt.args.param2)
+
+			// エラーチェック
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FunctionName() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// 結果の検証
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FunctionName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+```
+
+### 実際の例
+
+```go
+func TestCategoryService_GetAllCategories(t *testing.T) {
+	tests := []struct {
+		name       string
+		mockRepo   *mockCategoryRepository
+		wantErr    bool
+		wantLength int
+		checkFunc  func(t *testing.T, categories []*domain.Category)
+	}{
+		{
+			name: "正常系: カテゴリ一覧を取得できる",
+			mockRepo: &mockCategoryRepository{
+				categories: []*domain.Category{
+					{ID: 1, CategoryID: 100, Name: "月給", CategoryType: domain.CategoryTypeIncome},
+				},
+			},
+			wantErr:    false,
+			wantLength: 1,
+			checkFunc: func(t *testing.T, categories []*domain.Category) {
+				if categories[0].CategoryID != 100 {
+					t.Errorf("expected category_id 100, got %d", categories[0].CategoryID)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service := NewCategoryService(tt.mockRepo)
+			categories, err := service.GetAllCategories(context.Background())
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetAllCategories() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.checkFunc != nil {
+				tt.checkFunc(t, categories)
+			}
+		})
+	}
+}
+```
+
+### ポイント
+- テストケースが1つでもテーブルドリブン形式を使用してください
+- `name` フィールドには「正常系」「異常系」のプレフィックスと具体的な説明を含めます
+- 複雑な検証が必要な場合は `checkFunc` のような関数フィールドを活用します
+- エラーチェックは `(err != nil) != tt.wantErr` のパターンを使用します
 
 ---
 
