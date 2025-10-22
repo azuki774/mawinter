@@ -87,7 +87,10 @@ func runServer(host string, port int) error {
 	categoryRepo := repository.NewCategoryRepository(db)
 	categoryService := application.NewCategoryService(categoryRepo)
 
+	recordRepo := repository.NewRecordRepository(db)
+	recordService := application.NewRecordService(recordRepo)
+
 	// HTTPサーバの起動
-	server := http.NewServer(host, port, version, revision, build, dbInfo, categoryService)
+	server := http.NewServer(host, port, version, revision, build, dbInfo, categoryService, recordService)
 	return server.Start()
 }

@@ -27,6 +27,32 @@ func (m *mockCategoryRepository) FindAll(ctx context.Context) ([]*domain.Categor
 	return m.categories, nil
 }
 
+// mockRecordRepository はテスト用のモックリポジトリ
+type mockRecordRepository struct {
+	records []*domain.Record
+	err     error
+}
+
+func (m *mockRecordRepository) Create(ctx context.Context, record *domain.Record) (*domain.Record, error) {
+	return nil, nil
+}
+
+func (m *mockRecordRepository) FindByID(ctx context.Context, id int) (*domain.Record, error) {
+	return nil, nil
+}
+
+func (m *mockRecordRepository) FindAll(ctx context.Context, num, offset int, yyyymm string, categoryID int) ([]*domain.Record, error) {
+	return nil, nil
+}
+
+func (m *mockRecordRepository) Count(ctx context.Context, yyyymm string, categoryID int) (int, error) {
+	return 0, nil
+}
+
+func (m *mockRecordRepository) Delete(ctx context.Context, id int) error {
+	return nil
+}
+
 func TestGetV3Categories(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -41,10 +67,11 @@ func TestGetV3Categories(t *testing.T) {
 		}
 
 		categoryService := application.NewCategoryService(mockRepo)
+		recordService := application.NewRecordService(&mockRecordRepository{})
 
 		// サーバの作成
 		dbInfo := &config.DBInfo{}
-		server := NewServer("localhost", 8080, "v1.0.0", "abc123", "20250101", dbInfo, categoryService)
+		server := NewServer("localhost", 8080, "v1.0.0", "abc123", "20250101", dbInfo, categoryService, recordService)
 
 		// テストリクエスト
 		w := httptest.NewRecorder()
@@ -95,8 +122,9 @@ func TestGetV3Categories(t *testing.T) {
 		}
 
 		categoryService := application.NewCategoryService(mockRepo)
+		recordService := application.NewRecordService(&mockRecordRepository{})
 		dbInfo := &config.DBInfo{}
-		server := NewServer("localhost", 8080, "v1.0.0", "abc123", "20250101", dbInfo, categoryService)
+		server := NewServer("localhost", 8080, "v1.0.0", "abc123", "20250101", dbInfo, categoryService, recordService)
 
 		// テストリクエスト
 		w := httptest.NewRecorder()
