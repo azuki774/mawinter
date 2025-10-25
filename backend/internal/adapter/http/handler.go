@@ -211,7 +211,33 @@ func (s *Server) GetV3RecordCount(c *gin.Context) {
 // GetV3RecordYear - get year summary (GET /v3/record/summary/{year})
 func (s *Server) GetV3RecordYear(c *gin.Context, year int) {
 	// year パラメータは自動的にパースされて渡される
-	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
+	summaries, err := s.recordService.GetYearSummary(c.Request.Context(), year)
+	if err != nil {
+		slog.Error("Failed to get year summary", slog.Int("year", year), slog.String("error", err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get year summary"})
+		return
+	}
+
+	// APIレスポンス型に変換
+	response := make([]api.CategoryYearSummary, len(summaries))
+	for i, summary := range summaries {
+		// [12]intをスライスに変換
+		priceSlice := make([]int, 12)
+		for j := 0; j < 12; j++ {
+			priceSlice[j] = summary.Price[j]
+		}
+
+		response[i] = api.CategoryYearSummary{
+			CategoryId:   summary.CategoryID,
+			CategoryName: summary.CategoryName,
+			CategoryType: api.CategoryType(summary.CategoryType.String()),
+			Count:        summary.Count,
+			Price:        priceSlice,
+			Total:        summary.Total,
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteV3RecordId - delete record from id (DELETE /v3/record/{id})

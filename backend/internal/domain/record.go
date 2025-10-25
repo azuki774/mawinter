@@ -13,3 +13,13 @@ type Record struct {
 	Price        int
 	Memo         string
 }
+
+// CategoryYearSummary はカテゴリ別年次サマリーを表す
+type CategoryYearSummary struct {
+	CategoryID   int
+	CategoryName string
+	CategoryType CategoryType
+	Count        int      // 該当カテゴリの取引回数
+	Price        [12]int  // 12ヶ月分の金額（4月〜3月の順）
+	Total        int      // 合計金額
+}

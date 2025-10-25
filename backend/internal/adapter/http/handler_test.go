@@ -65,6 +65,10 @@ func (m *mockRecordRepository) GetAvailablePeriods(ctx context.Context) ([]strin
 	return nil, nil, nil
 }
 
+func (m *mockRecordRepository) GetYearSummary(ctx context.Context, year int) ([]*domain.CategoryYearSummary, error) {
+	return nil, nil
+}
+
 func TestGetV3Categories(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

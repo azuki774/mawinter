@@ -27,4 +27,8 @@ type RecordRepository interface {
 	// GetAvailablePeriods はDBに登録されているレコードのYYYYMMとFY(年度)の一覧を取得する
 	// 返される配列はいずれも新しい順にソートされている
 	GetAvailablePeriods(ctx context.Context) (yyyymm []string, fy []string, err error)
+
+	// GetYearSummary は指定された会計年度のカテゴリ別サマリーを取得する
+	// year: 会計年度（例: 2024 → 2024年4月〜2025年3月）
+	GetYearSummary(ctx context.Context, year int) ([]*CategoryYearSummary, error)
 }

@@ -47,3 +47,8 @@ func (s *RecordService) DeleteRecord(ctx context.Context, id int) error {
 func (s *RecordService) GetAvailablePeriods(ctx context.Context) ([]string, []string, error) {
 	return s.repo.GetAvailablePeriods(ctx)
 }
+
+// GetYearSummary は指定された会計年度のカテゴリ別サマリーを取得する
+func (s *RecordService) GetYearSummary(ctx context.Context, year int) ([]*domain.CategoryYearSummary, error) {
+	return s.repo.GetYearSummary(ctx, year)
+}

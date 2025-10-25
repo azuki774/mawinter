@@ -655,3 +655,166 @@ func TestRecordRepository_GetAvailablePeriods(t *testing.T) {
 		})
 	}
 }
+
+func TestRecordRepository_GetYearSummary(t *testing.T) {
+	tests := []struct {
+		name          string
+		year          int
+		mockSetup     func(mock sqlmock.Sqlmock)
+		wantErr       bool
+		checkFunc     func(t *testing.T, summaries []*domain.CategoryYearSummary)
+	}{
+		{
+			name: "正常系: 会計年度のサマリーを取得できる",
+			year: 2024,
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				// カテゴリ取得のモック
+				categoryRows := sqlmock.NewRows([]string{"id", "category_id", "name", "category_type"}).
+					AddRow(1, 201, "食費", 2).  // outgoing = 2
+					AddRow(2, 100, "月給", 1)   // income = 1
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `Category`")).
+					WillReturnRows(categoryRows)
+
+				// 月別集計のモック
+				// 2024年度（2024年4月〜2025年3月）のデータ
+				summaryRows := sqlmock.NewRows([]string{"category_id", "fiscal_month", "total_price", "count"}).
+					AddRow(201, 1, 50000, 10).  // 4月
+					AddRow(201, 2, 60000, 12).  // 5月
+					AddRow(201, 12, 55000, 11). // 3月
+					AddRow(100, 1, 300000, 1).  // 4月
+					AddRow(100, 12, 310000, 1)  // 3月
+
+				querySQL := `
+		SELECT
+			category_id,
+			CASE
+				WHEN MONTH(datetime) >= 4 THEN MONTH(datetime) - 3
+				ELSE MONTH(datetime) + 9
+			END as fiscal_month,
+			SUM(price) as total_price,
+			COUNT(*) as count
+		FROM Record
+		WHERE datetime >= ? AND datetime < ?
+		GROUP BY category_id, fiscal_month
+		ORDER BY category_id, fiscal_month
+	`
+				mock.ExpectQuery(regexp.QuoteMeta(querySQL)).
+					WithArgs("2024-04-01", "2025-04-01").
+					WillReturnRows(summaryRows)
+			},
+			wantErr: false,
+			checkFunc: func(t *testing.T, summaries []*domain.CategoryYearSummary) {
+				if len(summaries) != 2 {
+					t.Errorf("expected 2 summaries, got %d", len(summaries))
+					return
+				}
+
+				// カテゴリID順が保証されていないのでマップで検証
+				summaryMap := make(map[int]*domain.CategoryYearSummary)
+				for _, s := range summaries {
+					summaryMap[s.CategoryID] = s
+				}
+
+				// 食費（201）のチェック
+				if s, ok := summaryMap[201]; ok {
+					if s.CategoryName != "食費" {
+						t.Errorf("expected category name '食費', got '%s'", s.CategoryName)
+					}
+					if s.Count != 33 {
+						t.Errorf("expected count 33, got %d", s.Count)
+					}
+					if s.Total != 165000 {
+						t.Errorf("expected total 165000, got %d", s.Total)
+					}
+					if s.Price[0] != 50000 {
+						t.Errorf("expected price[0] 50000, got %d", s.Price[0])
+					}
+					if s.Price[1] != 60000 {
+						t.Errorf("expected price[1] 60000, got %d", s.Price[1])
+					}
+					if s.Price[11] != 55000 {
+						t.Errorf("expected price[11] 55000, got %d", s.Price[11])
+					}
+				} else {
+					t.Errorf("category 201 not found in summaries")
+				}
+
+				// 月給（100）のチェック
+				if s, ok := summaryMap[100]; ok {
+					if s.CategoryName != "月給" {
+						t.Errorf("expected category name '月給', got '%s'", s.CategoryName)
+					}
+					if s.Count != 2 {
+						t.Errorf("expected count 2, got %d", s.Count)
+					}
+					if s.Total != 610000 {
+						t.Errorf("expected total 610000, got %d", s.Total)
+					}
+				} else {
+					t.Errorf("category 100 not found in summaries")
+				}
+			},
+		},
+		{
+			name: "正常系: データが空の場合",
+			year: 2024,
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				// カテゴリ取得のモック
+				categoryRows := sqlmock.NewRows([]string{"id", "category_id", "name", "category_type"})
+				mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `Category`")).
+					WillReturnRows(categoryRows)
+
+				// 空の集計結果
+				summaryRows := sqlmock.NewRows([]string{"category_id", "fiscal_month", "total_price", "count"})
+				querySQL := `
+		SELECT
+			category_id,
+			CASE
+				WHEN MONTH(datetime) >= 4 THEN MONTH(datetime) - 3
+				ELSE MONTH(datetime) + 9
+			END as fiscal_month,
+			SUM(price) as total_price,
+			COUNT(*) as count
+		FROM Record
+		WHERE datetime >= ? AND datetime < ?
+		GROUP BY category_id, fiscal_month
+		ORDER BY category_id, fiscal_month
+	`
+				mock.ExpectQuery(regexp.QuoteMeta(querySQL)).
+					WithArgs("2024-04-01", "2025-04-01").
+					WillReturnRows(summaryRows)
+			},
+			wantErr: false,
+			checkFunc: func(t *testing.T, summaries []*domain.CategoryYearSummary) {
+				if len(summaries) != 0 {
+					t.Errorf("expected 0 summaries, got %d", len(summaries))
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock := setupMockDB(t)
+			repo := NewRecordRepository(db)
+
+			tt.mockSetup(mock)
+
+			summaries, err := repo.GetYearSummary(context.Background(), tt.year)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetYearSummary() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.checkFunc != nil {
+				tt.checkFunc(t, summaries)
+			}
+
+			// 全ての期待が満たされたか確認
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unfulfilled expectations: %v", err)
+			}
+		})
+	}
+}
