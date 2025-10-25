@@ -125,7 +125,8 @@
     "DB_NAME": "mawinter",
     "GO111MODULE": "on",
     "GOPATH": "/home/vscode/go",
-    "PATH": "/home/vscode/go/bin:${containerEnv:PATH}"
+    "PATH": "/home/vscode/go/bin:${containerEnv:PATH}",
+    "NUXT_PUBLIC_MAWINTER_API": "http://localhost:8080"
   },
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,readonly,type=bind,consistency=cached"
