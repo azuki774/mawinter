@@ -191,3 +191,53 @@ func (r *RecordRepository) Delete(ctx context.Context, id int) error {
 	}
 	return nil
 }
+
+// GetAvailablePeriods はDBに登録されているレコードのYYYYMMとFY(年度)の一覧を取得する
+// 年度は4月始まり(4月〜翌年3月)で計算される
+// 返される配列はいずれも新しい順にソートされている
+func (r *RecordRepository) GetAvailablePeriods(ctx context.Context) ([]string, []string, error) {
+	// YYYYMMを取得（重複なし、降順）
+	type YYYYMMResult struct {
+		YYYYMM string
+	}
+	var yyyymmResults []YYYYMMResult
+
+	// DATE_FORMAT を使ってYYYYMMを抽出し、DISTINCTで重複排除
+	if err := r.db.WithContext(ctx).
+		Model(&RecordModel{}).
+		Select("DISTINCT DATE_FORMAT(datetime, '%Y%m') as yyyymm").
+		Order("yyyymm DESC").
+		Scan(&yyyymmResults).Error; err != nil {
+		return nil, nil, err
+	}
+
+	// YYYYMMのスライスを作成
+	yyyymmSlice := make([]string, len(yyyymmResults))
+	for i, result := range yyyymmResults {
+		yyyymmSlice[i] = result.YYYYMM
+	}
+
+	// FY(年度)を計算
+	// 年度は4月始まりなので、CASE文で計算
+	// 1-3月は前年度、4-12月は当年度
+	type FYResult struct {
+		FY string
+	}
+	var fyResults []FYResult
+
+	if err := r.db.WithContext(ctx).
+		Model(&RecordModel{}).
+		Select("DISTINCT CASE WHEN MONTH(datetime) BETWEEN 1 AND 3 THEN YEAR(datetime) - 1 ELSE YEAR(datetime) END as fy").
+		Order("fy DESC").
+		Scan(&fyResults).Error; err != nil {
+		return nil, nil, err
+	}
+
+	// FYのスライスを作成
+	fySlice := make([]string, len(fyResults))
+	for i, result := range fyResults {
+		fySlice[i] = result.FY
+	}
+
+	return yyyymmSlice, fySlice, nil
+}

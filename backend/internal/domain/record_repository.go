@@ -23,4 +23,8 @@ type RecordRepository interface {
 
 	// Delete は指定されたIDのレコードを削除する
 	Delete(ctx context.Context, id int) error
+
+	// GetAvailablePeriods はDBに登録されているレコードのYYYYMMとFY(年度)の一覧を取得する
+	// 返される配列はいずれも新しい順にソートされている
+	GetAvailablePeriods(ctx context.Context) (yyyymm []string, fy []string, err error)
 }
