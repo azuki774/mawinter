@@ -1,4 +1,4 @@
-.PHONY: setup generate clean bin test help
+.PHONY: setup generate clean bin test build help
 
 # 変数定義
 OPENAPI_SPEC := ../api/mawinter-api-v3.yaml
@@ -7,6 +7,9 @@ MODULE_NAME := github.com/azuki774/mawinter
 BIN_DIR := ./bin
 BINARY_NAME := mawinter
 CMD_DIR := ./cmd/mawinter
+IMAGE_NAME := ghcr.io/azuki774/mawinter-api
+VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo 'dev')
+COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo 'unknown')
 
 help: ## ヘルプメッセージを表示
 	@echo 'Usage: make [target]'
@@ -56,6 +59,9 @@ bin: ## 静的バイナリをビルド
 
 test: ## テストを実行
 	go test -v ./...
+
+build: ## Dockerイメージをビルド
+	docker build -t $(IMAGE_NAME):$(VERSION) -t $(IMAGE_NAME):$(COMMIT) -t $(IMAGE_NAME):latest .
 
 clean: ## 生成されたファイルとバイナリを削除
 	rm -rf $(GENERATED_DIR)
