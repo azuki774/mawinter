@@ -241,3 +241,96 @@ func (r *RecordRepository) GetAvailablePeriods(ctx context.Context) ([]string, [
 
 	return yyyymmSlice, fySlice, nil
 }
+
+// GetYearSummary は指定された会計年度のカテゴリ別サマリーを取得する
+// year: 会計年度（例: 2024 → 2024年4月〜2025年3月）
+func (r *RecordRepository) GetYearSummary(ctx context.Context, year int) ([]*domain.CategoryYearSummary, error) {
+	// 会計年度の開始日と終了日を計算
+	// year=2024 → 2024-04-01 〜 2025-03-31
+	startDate := fmt.Sprintf("%d-04-01", year)
+	endDate := fmt.Sprintf("%d-04-01", year+1)
+
+	// カテゴリ情報を全て取得
+	var categories []*CategoryModel
+	if err := r.db.WithContext(ctx).Find(&categories).Error; err != nil {
+		return nil, err
+	}
+
+	// カテゴリIDからカテゴリ情報へのマップを作成
+	categoryMap := make(map[int]*CategoryModel)
+	for _, cat := range categories {
+		categoryMap[cat.CategoryID] = cat
+	}
+
+	// 月別・カテゴリ別の集計を取得
+	// 会計年度の4月を1とし、翌年3月を12とする
+	type MonthlySum struct {
+		CategoryID int
+		FiscalMonth int  // 会計年度での月番号（1-12）
+		TotalPrice  int
+		Count       int
+	}
+
+	var monthlySums []MonthlySum
+
+	// SQLクエリで月別・カテゴリ別に集計
+	// 会計年度の月を計算: 4月=1, 5月=2, ..., 3月=12
+	query := `
+		SELECT
+			category_id,
+			CASE
+				WHEN MONTH(datetime) >= 4 THEN MONTH(datetime) - 3
+				ELSE MONTH(datetime) + 9
+			END as fiscal_month,
+			SUM(price) as total_price,
+			COUNT(*) as count
+		FROM Record
+		WHERE datetime >= ? AND datetime < ?
+		GROUP BY category_id, fiscal_month
+		ORDER BY category_id, fiscal_month
+	`
+
+	if err := r.db.WithContext(ctx).Raw(query, startDate, endDate).Scan(&monthlySums).Error; err != nil {
+		return nil, err
+	}
+
+	// カテゴリごとに集計データをまとめる
+	summaryMap := make(map[int]*domain.CategoryYearSummary)
+
+	for _, ms := range monthlySums {
+		cat, exists := categoryMap[ms.CategoryID]
+		if !exists {
+			continue // カテゴリが見つからない場合はスキップ
+		}
+
+		// サマリーがまだ存在しない場合は作成
+		if _, exists := summaryMap[ms.CategoryID]; !exists {
+			summaryMap[ms.CategoryID] = &domain.CategoryYearSummary{
+				CategoryID:   cat.CategoryID,
+				CategoryName: cat.Name,
+				CategoryType: domain.CategoryType(cat.CategoryType),
+				Count:        0,
+				Price:        [12]int{}, // ゼロ初期化
+				Total:        0,
+			}
+		}
+
+		summary := summaryMap[ms.CategoryID]
+
+		// 会計年度の月番号（1-12）を配列インデックス（0-11）に変換
+		monthIndex := ms.FiscalMonth - 1
+		if monthIndex >= 0 && monthIndex < 12 {
+			summary.Price[monthIndex] = ms.TotalPrice
+			summary.Count += ms.Count
+			summary.Total += ms.TotalPrice
+		}
+	}
+
+	// マップからスライスに変換
+	result := make([]*domain.CategoryYearSummary, 0, len(summaryMap))
+	for _, summary := range summaryMap {
+		result = append(result, summary)
+	}
+
+	return result, nil
+}
