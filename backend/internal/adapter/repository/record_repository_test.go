@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -461,5 +462,196 @@ func TestRecordRepository_Delete_NotFound(t *testing.T) {
 	// 全ての期待が満たされたか確認
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %v", err)
+	}
+}
+
+func TestRecordRepository_GetAvailablePeriods(t *testing.T) {
+	tests := []struct {
+		name           string
+		mockRecords    []RecordModel
+		wantYYYYMM     []string
+		wantFY         []string
+		wantErr        bool
+		checkYYYYMMLen int
+		checkFYLen     int
+	}{
+		{
+			name: "正常系: 複数年月のレコードから期間を取得",
+			mockRecords: []RecordModel{
+				{Datetime: time.Date(2024, 5, 15, 0, 0, 0, 0, time.UTC)},  // FY2024, 202405
+				{Datetime: time.Date(2024, 4, 1, 0, 0, 0, 0, time.UTC)},   // FY2024, 202404
+				{Datetime: time.Date(2024, 3, 31, 0, 0, 0, 0, time.UTC)},  // FY2023, 202403
+				{Datetime: time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC)}, // FY2023, 202312
+				{Datetime: time.Date(2023, 5, 10, 0, 0, 0, 0, time.UTC)},  // FY2023, 202305
+			},
+			wantYYYYMM:     []string{"202405", "202404", "202403", "202312", "202305"},
+			wantFY:         []string{"2024", "2023"},
+			wantErr:        false,
+			checkYYYYMMLen: 5,
+			checkFYLen:     2,
+		},
+		{
+			name: "正常系: 同じ年月の重複レコードは1つにまとめる",
+			mockRecords: []RecordModel{
+				{Datetime: time.Date(2024, 5, 1, 0, 0, 0, 0, time.UTC)},
+				{Datetime: time.Date(2024, 5, 15, 0, 0, 0, 0, time.UTC)},
+				{Datetime: time.Date(2024, 5, 31, 0, 0, 0, 0, time.UTC)},
+			},
+			wantYYYYMM:     []string{"202405"},
+			wantFY:         []string{"2024"},
+			wantErr:        false,
+			checkYYYYMMLen: 1,
+			checkFYLen:     1,
+		},
+		{
+			name:           "正常系: レコードが0件の場合は空配列を返す",
+			mockRecords:    []RecordModel{},
+			wantYYYYMM:     []string{},
+			wantFY:         []string{},
+			wantErr:        false,
+			checkYYYYMMLen: 0,
+			checkFYLen:     0,
+		},
+		{
+			name: "正常系: 年度境界のテスト（3月と4月）",
+			mockRecords: []RecordModel{
+				{Datetime: time.Date(2024, 4, 1, 0, 0, 0, 0, time.UTC)},  // FY2024
+				{Datetime: time.Date(2024, 3, 31, 0, 0, 0, 0, time.UTC)}, // FY2023
+			},
+			wantYYYYMM:     []string{"202404", "202403"},
+			wantFY:         []string{"2024", "2023"},
+			wantErr:        false,
+			checkYYYYMMLen: 2,
+			checkFYLen:     2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gormDB, mock := setupMockDB(t)
+
+			// YYYYMM取得クエリのモック
+			yyyymmRows := sqlmock.NewRows([]string{"yyyymm"})
+			yyyymmMap := make(map[string]bool)
+			for _, record := range tt.mockRecords {
+				yyyymm := record.Datetime.Format("200601")
+				if !yyyymmMap[yyyymm] {
+					yyyymmMap[yyyymm] = true
+				}
+			}
+			// 降順でソート
+			yyyymmList := make([]string, 0, len(yyyymmMap))
+			for k := range yyyymmMap {
+				yyyymmList = append(yyyymmList, k)
+			}
+			for i := 0; i < len(yyyymmList)-1; i++ {
+				for j := i + 1; j < len(yyyymmList); j++ {
+					if yyyymmList[i] < yyyymmList[j] {
+						yyyymmList[i], yyyymmList[j] = yyyymmList[j], yyyymmList[i]
+					}
+				}
+			}
+			for _, ym := range yyyymmList {
+				yyyymmRows.AddRow(ym)
+			}
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT DATE_FORMAT(datetime, '%Y%m') as yyyymm FROM `Record` ORDER BY yyyymm DESC")).
+				WillReturnRows(yyyymmRows)
+
+			// FY取得クエリのモック
+			fyRows := sqlmock.NewRows([]string{"fy"})
+			fyMap := make(map[string]bool)
+			for _, record := range tt.mockRecords {
+				year := record.Datetime.Year()
+				month := record.Datetime.Month()
+				fyYear := year
+				if month >= 1 && month <= 3 {
+					fyYear = year - 1
+				}
+				fy := fmt.Sprintf("%d", fyYear)
+				if !fyMap[fy] {
+					fyMap[fy] = true
+				}
+			}
+			// 降順でソート
+			fyList := make([]string, 0, len(fyMap))
+			for k := range fyMap {
+				fyList = append(fyList, k)
+			}
+			for i := 0; i < len(fyList)-1; i++ {
+				for j := i + 1; j < len(fyList); j++ {
+					if fyList[i] < fyList[j] {
+						fyList[i], fyList[j] = fyList[j], fyList[i]
+					}
+				}
+			}
+			for _, f := range fyList {
+				fyRows.AddRow(f)
+			}
+			mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT CASE WHEN MONTH(datetime) BETWEEN 1 AND 3 THEN YEAR(datetime) - 1 ELSE YEAR(datetime) END as fy FROM `Record` ORDER BY fy DESC")).
+				WillReturnRows(fyRows)
+
+			// テスト実行
+			repo := NewRecordRepository(gormDB)
+			yyyymm, fy, err := repo.GetAvailablePeriods(context.Background())
+
+			// エラーチェック
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetAvailablePeriods() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// 配列長のチェック
+			if len(yyyymm) != tt.checkYYYYMMLen {
+				t.Errorf("expected yyyymm length %d, got %d", tt.checkYYYYMMLen, len(yyyymm))
+			}
+			if len(fy) != tt.checkFYLen {
+				t.Errorf("expected fy length %d, got %d", tt.checkFYLen, len(fy))
+			}
+
+			// 結果の検証
+			if !tt.wantErr && len(tt.wantYYYYMM) > 0 {
+				for i, want := range tt.wantYYYYMM {
+					if i < len(yyyymm) {
+						if yyyymm[i] != want {
+							t.Errorf("yyyymm[%d] = %s, want %s", i, yyyymm[i], want)
+						}
+					}
+				}
+			}
+
+			if !tt.wantErr && len(tt.wantFY) > 0 {
+				for i, want := range tt.wantFY {
+					if i < len(fy) {
+						if fy[i] != want {
+							t.Errorf("fy[%d] = %s, want %s", i, fy[i], want)
+						}
+					}
+				}
+			}
+
+			// ソート順のチェック（新しい順）
+			if len(yyyymm) > 1 {
+				for i := 0; i < len(yyyymm)-1; i++ {
+					if yyyymm[i] < yyyymm[i+1] {
+						t.Errorf("yyyymm is not sorted in descending order: %v", yyyymm)
+						break
+					}
+				}
+			}
+
+			if len(fy) > 1 {
+				for i := 0; i < len(fy)-1; i++ {
+					if fy[i] < fy[i+1] {
+						t.Errorf("fy is not sorted in descending order: %v", fy)
+						break
+					}
+				}
+			}
+
+			// 全ての期待が満たされたか確認
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unfulfilled expectations: %v", err)
+			}
+		})
 	}
 }

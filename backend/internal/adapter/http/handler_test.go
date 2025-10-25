@@ -61,6 +61,10 @@ func (m *mockRecordRepository) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
+func (m *mockRecordRepository) GetAvailablePeriods(ctx context.Context) ([]string, []string, error) {
+	return nil, nil, nil
+}
+
 func TestGetV3Categories(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

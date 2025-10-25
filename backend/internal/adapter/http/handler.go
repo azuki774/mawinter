@@ -162,7 +162,21 @@ func (s *Server) PostV3Record(c *gin.Context) {
 
 // GetV3RecordAvailable - record available (GET /v3/record/available)
 func (s *Server) GetV3RecordAvailable(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
+	// レコードの利用可能期間を取得
+	yyyymm, fy, err := s.recordService.GetAvailablePeriods(c.Request.Context())
+	if err != nil {
+		slog.Error("Failed to get available periods", slog.String("error", err.Error()))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get available periods"})
+		return
+	}
+
+	// APIレスポンス型に変換
+	response := gin.H{
+		"fy":     fy,
+		"yyyymm": yyyymm,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetV3RecordCount - record count (GET /v3/record/count)

@@ -42,3 +42,8 @@ func (s *RecordService) CountRecords(ctx context.Context, yyyymm string, categor
 func (s *RecordService) DeleteRecord(ctx context.Context, id int) error {
 	return s.repo.Delete(ctx, id)
 }
+
+// GetAvailablePeriods はDBに登録されているレコードのYYYYMMとFY(年度)の一覧を取得する
+func (s *RecordService) GetAvailablePeriods(ctx context.Context) ([]string, []string, error) {
+	return s.repo.GetAvailablePeriods(ctx)
+}
