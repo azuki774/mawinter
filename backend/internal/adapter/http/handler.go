@@ -203,13 +203,40 @@ func (s *Server) GetV3RecordYear(c *gin.Context, year int) {
 // DeleteV3RecordId - delete record from id (DELETE /v3/record/{id})
 func (s *Server) DeleteV3RecordId(c *gin.Context, id int) {
 	// id パラメータは自動的にパースされて渡される
-	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
+	err := s.recordService.DeleteRecord(c.Request.Context(), id)
+	if err != nil {
+		slog.Error("Failed to delete record", slog.Int("id", id), slog.String("error", err.Error()))
+		c.JSON(http.StatusNotFound, gin.H{"error": "record not found"})
+		return
+	}
+
+	// 削除成功時は204 No Contentを返す
+	c.Status(http.StatusNoContent)
 }
 
 // GetV3RecordId - get record from id (GET /v3/record/{id})
 func (s *Server) GetV3RecordId(c *gin.Context, id int) {
 	// id パラメータは自動的にパースされて渡される
-	c.JSON(http.StatusNotImplemented, gin.H{"message": "not implemented"})
+	record, err := s.recordService.GetRecordByID(c.Request.Context(), id)
+	if err != nil {
+		slog.Error("Failed to get record", slog.Int("id", id), slog.String("error", err.Error()))
+		c.JSON(http.StatusNotFound, gin.H{"error": "record not found"})
+		return
+	}
+
+	// APIレスポンス型に変換
+	response := api.Record{
+		Id:           record.ID,
+		CategoryId:   record.CategoryID,
+		CategoryName: record.CategoryName,
+		Datetime:     record.Datetime,
+		From:         record.From,
+		Type:         record.Type,
+		Price:        record.Price,
+		Memo:         record.Memo,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetV3Version - get version (GET /v3/version)
