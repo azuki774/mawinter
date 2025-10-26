@@ -1,3 +1,47 @@
 backend/bin/*
 TODO.md
 .claude
+
+# Go
+vendor/
+*.test
+*.out
+coverage.txt
+*.cover
+
+# pnpm
+.pnpm-store/
+pnpm-lock.yaml
+
+# Frontend build outputs
+frontend/**/node_modules/
+frontend/**/.nuxt/
+frontend/**/.output/
+frontend/**/dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE and Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+Thumbs.db
