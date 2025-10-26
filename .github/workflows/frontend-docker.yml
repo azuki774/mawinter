@@ -1,4 +1,4 @@
-name: Backend Docker Build
+name: Frontend Docker Build
 
 on:
   push:
@@ -8,12 +8,12 @@ on:
       - "v*.*.*"
   pull_request:
     paths:
-      - "backend/**"
-      - ".github/workflows/backend-docker.yml"
+      - "frontend/**"
+      - ".github/workflows/frontend-docker.yml"
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: azuki774/mawinter-api
+  IMAGE_NAME: azuki774/mawinter-web
 
 jobs:
   build-and-test:
@@ -24,13 +24,13 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./backend
+        working-directory: ./frontend
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # git describeを使うために全履歴を取得
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -60,7 +60,7 @@ jobs:
         if: github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/'))
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./frontend
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -71,7 +71,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./frontend
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
