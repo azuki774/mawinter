@@ -3,6 +3,8 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  modules: ['@nuxt/eslint'],
+
   // ランタイム設定 (環境変数)
   runtimeConfig: {
     // サーバーサイドのみで利用可能な設定
