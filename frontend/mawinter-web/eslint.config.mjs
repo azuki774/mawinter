@@ -8,6 +8,10 @@ export default withNuxt(
       // コンソールログの使用を警告 (開発中は許可、本番前に修正)
       'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
       'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+      // pagesディレクトリのコンポーネント名は単一語でも許可
+      'vue/multi-word-component-names': ['error', {
+        ignores: ['index']
+      }],
     },
   }
 )
