@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 // イベント定義
 const emit = defineEmits(['record-created'])
@@ -18,37 +18,6 @@ const { data: categories } = await useFetch('/api/v3/categories', {
   baseURL: useRuntimeConfig().public.mawinterApi,
   server: false // クライアントサイドでのみ取得
 })
-
-// カテゴリをタイプ別にグループ化
-const groupedCategories = computed(() => {
-  if (!categories.value) return {}
-
-  const groups = {
-    income: [],
-    outgoing: [],
-    saving: [],
-    investing: []
-  }
-
-  categories.value.forEach((cat) => {
-    if (groups[cat.category_type]) {
-      groups[cat.category_type].push({
-        category_id: cat.category_id,
-        category_name: cat.category_name
-      })
-    }
-  })
-
-  return groups
-})
-
-// カテゴリタイプの日本語名
-const categoryTypeLabels = {
-  income: '収入',
-  outgoing: '支出',
-  saving: '貯金',
-  investing: '投資'
-}
 
 // 送信中フラグ
 const isSubmitting = ref(false)
@@ -119,19 +88,13 @@ const submitRecord = async () => {
           v-model.number="formData.category_id"
           required
         >
-          <optgroup
-            v-for="(categoryList, type) in groupedCategories"
-            :key="type"
-            :label="categoryTypeLabels[type]"
+          <option
+            v-for="cat in categories"
+            :key="cat.category_id"
+            :value="cat.category_id"
           >
-            <option
-              v-for="cat in categoryList"
-              :key="cat.category_id"
-              :value="cat.category_id"
-            >
-              {{ cat.category_name }}
-            </option>
-          </optgroup>
+            {{ cat.category_name }}
+          </option>
         </select>
       </div>
 
