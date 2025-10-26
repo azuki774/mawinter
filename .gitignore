@@ -11,7 +11,6 @@ coverage.txt
 
 # pnpm
 .pnpm-store/
-pnpm-lock.yaml
 
 # Frontend build outputs
 frontend/**/node_modules/
