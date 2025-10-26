@@ -10,18 +10,12 @@ export default defineNuxtConfig({
     port: 3000
   },
 
-  // Nitroサーバー設定（プロキシ）
-  nitro: {
-    devProxy: {
-      '/api': {
-        target: 'http://localhost:8080/api',
-        changeOrigin: true
-      }
-    }
-  },
-
   // ランタイム設定 (環境変数)
   runtimeConfig: {
+    // サーバーサイドのみで使用される環境変数（ブラウザからはアクセス不可）
+    // バックエンドAPIサーバーの実際のURL
+    mawinterApiUrl: process.env.MAWINTER_API_URL || 'http://localhost:8080',
+
     public: {
       // バックエンドAPIのベースURL（プロキシ経由で空文字列）
       mawinterApi: '',
