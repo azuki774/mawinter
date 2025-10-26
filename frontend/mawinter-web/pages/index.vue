@@ -30,6 +30,13 @@ const handleRecordCreated = () => {
   <section>
     <header>
       <h1>mawinter-web</h1>
+      <nav>
+        <ul>
+          <li>
+            <NuxtLink to="/graph">グラフ</NuxtLink>
+          </li>
+        </ul>
+      </nav>
     </header>
 
     <section>
