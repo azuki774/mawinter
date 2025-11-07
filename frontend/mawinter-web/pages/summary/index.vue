@@ -27,8 +27,8 @@ const outgoingCategoryOrder = [
   { id: 500, label: '雑費' }
 ]
 const investingCategoryOrder = [
-  { id: 600, label: '家賃用貯金' },
-  { id: 601, label: 'PC用貯金' },
+  // { id: 600, label: '家賃用貯金' },
+  // { id: 601, label: 'PC用貯金' },
   { id: 700, label: 'NISA入出金' },
   { id: 701, label: 'NISA変動' }
 ]
@@ -278,110 +278,59 @@ watch(selectedYear, (newYear, oldYear) => {
     </header>
 
     <section class="controls">
-      <label
-        class="control-label"
-        for="year-select"
-      >
+      <label class="control-label" for="year-select">
         表示年度
       </label>
-      <select
-        id="year-select"
-        v-model.number="selectedYear"
-        :disabled="isDropdownDisabled"
-      >
-        <option
-          v-for="year in availableYears"
-          :key="year"
-          :value="year"
-        >
+      <select id="year-select" v-model.number="selectedYear" :disabled="isDropdownDisabled">
+        <option v-for="year in availableYears" :key="year" :value="year">
           {{ year }}年度
         </option>
       </select>
-      <p
-        v-if="isLoadingYears"
-        class="state-text"
-      >
+      <p v-if="isLoadingYears" class="state-text">
         年度を取得中...
       </p>
-      <p
-        v-else-if="yearError"
-        class="state-text state-text--error"
-      >
+      <p v-else-if="yearError" class="state-text state-text--error">
         {{ yearError }}
       </p>
     </section>
 
     <section>
-      <p
-        v-if="isLoadingSummary"
-        class="state-text"
-      >
+      <p v-if="isLoadingSummary" class="state-text">
         サマリーを読み込み中です...
       </p>
-      <p
-        v-else-if="summaryError"
-        class="state-text state-text--error"
-      >
+      <p v-else-if="summaryError" class="state-text state-text--error">
         {{ summaryError }}
       </p>
-      <p
-        v-else-if="!hasSummaryData"
-        class="state-text"
-      >
+      <p v-else-if="!hasSummaryData" class="state-text">
         表示できるサマリーデータがありません。
       </p>
       <div v-else>
-        <div
-          v-for="section in ['total', 'income', 'outgoing', 'investing']"
-          :key="section"
-          class="table-wrapper"
-        >
+        <div v-for="section in ['total', 'income', 'outgoing', 'investing']" :key="section" class="table-wrapper">
           <h2 class="table-title">
             {{ section === 'total' ? '累計' : section === 'income' ? '収入' : section === 'outgoing' ? '支出' : '投資' }}
           </h2>
           <table class="summary-table">
             <thead>
               <tr>
-                <th
-                  scope="col"
-                  class="label-col"
-                >
+                <th scope="col" class="label-col">
                   区分
                 </th>
-                <th
-                  v-for="month in months"
-                  :key="month"
-                  scope="col"
-                  class="numeric month-col"
-                >
+                <th v-for="month in months" :key="month" scope="col" class="numeric month-col">
                   {{ month }}
                 </th>
-                <th
-                  scope="col"
-                  class="numeric total-col"
-                >
+                <th scope="col" class="numeric total-col">
                   合計
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="row in groupedSummary[section]"
-                :key="section + row.label"
-                class="metric-row"
-                :class="`metric-row--${row.theme}`"
-              >
-                <th
-                  scope="row"
-                  class="label-col"
-                >
+              <tr v-for="row in groupedSummary[section]" :key="section + row.label" class="metric-row"
+                :class="`metric-row--${row.theme}`">
+                <th scope="row" class="label-col">
                   {{ row.label }}
                 </th>
-                <td
-                  v-for="(value, index) in row.monthly"
-                  :key="`${section}-${row.label}-${index}`"
-                  class="numeric month-col"
-                >
+                <td v-for="(value, index) in row.monthly" :key="`${section}-${row.label}-${index}`"
+                  class="numeric month-col">
                   {{ value.toLocaleString() }}
                 </td>
                 <td class="numeric total-col">
