@@ -342,16 +342,24 @@ watch(selectedYear, (newYear, oldYear) => {
           <table class="summary-table">
             <thead>
               <tr>
-                <th scope="col">区分</th>
+                <th
+                  scope="col"
+                  class="label-col"
+                >
+                  区分
+                </th>
                 <th
                   v-for="month in months"
                   :key="month"
                   scope="col"
-                  class="numeric"
+                  class="numeric month-col"
                 >
                   {{ month }}
                 </th>
-                <th scope="col" class="numeric">
+                <th
+                  scope="col"
+                  class="numeric total-col"
+                >
                   合計
                 </th>
               </tr>
@@ -363,17 +371,20 @@ watch(selectedYear, (newYear, oldYear) => {
                 class="metric-row"
                 :class="`metric-row--${row.theme}`"
               >
-                <th scope="row">
+                <th
+                  scope="row"
+                  class="label-col"
+                >
                   {{ row.label }}
                 </th>
                 <td
                   v-for="(value, index) in row.monthly"
                   :key="`${section}-${row.label}-${index}`"
-                  class="numeric"
+                  class="numeric month-col"
                 >
                   {{ value.toLocaleString() }}
                 </td>
-                <td class="numeric">
+                <td class="numeric total-col">
                   {{ row.total.toLocaleString() }}
                 </td>
               </tr>
@@ -455,6 +466,7 @@ select {
 
 .summary-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   background-color: #fff;
   border: 1px solid #e5e7eb;
@@ -480,6 +492,19 @@ select {
 .summary-table td.numeric {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.label-col {
+  width: 140px;
+  white-space: nowrap;
+}
+
+.month-col {
+  width: 70px;
+}
+
+.total-col {
+  width: 110px;
 }
 
 .metric-row--total {
