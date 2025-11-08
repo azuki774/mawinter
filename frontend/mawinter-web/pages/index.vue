@@ -35,6 +35,9 @@ const handleRecordCreated = () => {
           <li>
             <NuxtLink to="/graph">グラフ</NuxtLink>
           </li>
+          <li>
+            <NuxtLink to="/summary">サマリー</NuxtLink>
+          </li>
         </ul>
       </nav>
     </header>
