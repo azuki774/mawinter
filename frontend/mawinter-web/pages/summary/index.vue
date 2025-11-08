@@ -27,8 +27,8 @@ const outgoingCategoryOrder = [
   { id: 500, label: '雑費' }
 ]
 const investingCategoryOrder = [
-  { id: 600, label: '家賃用貯金' },
-  { id: 601, label: 'PC用貯金' },
+  // { id: 600, label: '家賃用貯金' },
+  // { id: 601, label: 'PC用貯金' },
   { id: 700, label: 'NISA入出金' },
   { id: 701, label: 'NISA変動' }
 ]
