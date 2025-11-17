@@ -15,4 +15,5 @@ Go/Nuxt 製の家計簿サーバ
 ## トレース出力
 
 - Go バックエンド: 環境変数 `OTLP_SERVER` に `host:port` を指定すると `http(s)://<host:port>/v1/traces` へトレースを送信します。
+- Nuxt SSR: 同じ環境変数を参照し、`http(s)://<host:port>/v1/traces` へ自動的に送信します。
 - 変数が未設定の場合はトレース送信を自動的に無効化します。

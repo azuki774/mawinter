@@ -86,6 +86,9 @@ cp .env.example .env
 ```bash
 # バックエンドAPIサーバーのURL（サーバーサイドプロキシで使用）
 MAWINTER_API_URL=https://your-api-server.com
+
+# OTLP コレクタ（任意）
+#OTLP_SERVER=grafana-k8s-monitoring-alloy-receiver.monitor.svc.cluster.local:4318
 ```
 
 ### 環境変数の一覧
@@ -93,8 +96,11 @@ MAWINTER_API_URL=https://your-api-server.com
 | 環境変数名          | 説明                                                     | デフォルト値           | スコープ         |
 | ------------------- | -------------------------------------------------------- | ---------------------- | ---------------- |
 | `MAWINTER_API_URL`  | バックエンド API サーバーの実際の URL（プロキシ転送先） | `http://localhost:8080` | サーバーサイド   |
+| `OTLP_SERVER`       | OTLP コレクタのホスト:ポート。設定すると SSR からトレースを送信 | *(未設定)*             | サーバーサイド   |
 
 API のベースエンドポイント (`/api`) は固定で、変更できません。
+
+`OTLP_SERVER` は `host:port` 形式を想定し、指定がなければトレース送信は無効化されます。スキーム未指定の場合は `http://` として `/v1/traces` に送信します。Go バックエンドと同じ変数名です。
 
 ### API 呼び出しの使い方
 
