@@ -4,9 +4,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 // @opentelemetry/resources is CommonJS, so import via default export
-import resources from '@opentelemetry/resources'
-
-const { Resource } = resources
+import * as resources from '@opentelemetry/resources'
 
 let sdk: NodeSDK | null = null
 
@@ -54,11 +52,16 @@ export default defineNitroPlugin(async (nitroApp) => {
     return
   }
 
-  const resource = new Resource({
+  const { resourceFromAttributes, defaultResource } = resources
+  const attributes = {
     [SemanticResourceAttributes.SERVICE_NAME]: 'mawinter-ssr',
     [SemanticResourceAttributes.SERVICE_VERSION]:
       process.env.NUXT_PUBLIC_APP_VERSION || process.env.npm_package_version || 'dev',
-  })
+  }
+  const baseResource = resourceFromAttributes(attributes)
+  const resource = defaultResource && typeof defaultResource.merge === 'function'
+    ? defaultResource.merge(baseResource)
+    : baseResource
 
   sdk = new NodeSDK({
     resource,
