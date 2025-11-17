@@ -1,17 +1,23 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"time"
 
 	"github.com/azuki774/mawinter/internal/adapter/http"
 	"github.com/azuki774/mawinter/internal/adapter/repository"
 	"github.com/azuki774/mawinter/internal/application"
 	"github.com/azuki774/mawinter/pkg/config"
 	"github.com/azuki774/mawinter/pkg/logger"
+	"github.com/azuki774/mawinter/pkg/telemetry"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	gormotel "gorm.io/plugin/opentelemetry/tracing"
 )
 
 var (
@@ -40,6 +46,33 @@ var serveCmd = &cobra.Command{
 func runServer(host string, port int) error {
 	// デフォルトロガーの初期化
 	slog.SetDefault(logger.New())
+
+	ctx := context.Background()
+
+	otlpEndpoint := os.Getenv("OTLP_SERVER")
+	shutdownTracer, tracingEnabled, err := telemetry.Init(ctx, otlpEndpoint, telemetry.ServiceNameAPI, version)
+	if err != nil {
+		slog.Error("Failed to initialize tracing",
+			slog.String("error", err.Error()),
+		)
+		return fmt.Errorf("failed to initialize tracing: %w", err)
+	}
+
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracer(shutdownCtx); err != nil {
+			slog.Error("Failed to shutdown tracing", slog.String("error", err.Error()))
+		}
+	}()
+
+	if tracingEnabled {
+		slog.Info("OpenTelemetry tracing enabled",
+			slog.String("otlp_server", otlpEndpoint),
+		)
+	} else {
+		slog.Info("OpenTelemetry tracing disabled (OTLP_SERVER not set)")
+	}
 
 	slog.Info("Starting Mawinter server",
 		slog.String("host", host),
@@ -79,6 +112,17 @@ func runServer(host string, port int) error {
 			slog.String("error", err.Error()),
 		)
 		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	if err := db.Use(gormotel.NewPlugin(
+		gormotel.WithTracerProvider(otel.GetTracerProvider()),
+		gormotel.WithDBSystem("mysql"),
+		gormotel.WithoutMetrics(),
+	)); err != nil {
+		slog.Error("Failed to enable GORM tracing",
+			slog.String("error", err.Error()),
+		)
+		return fmt.Errorf("failed to enable database tracing: %w", err)
 	}
 
 	slog.Info("Database connection established")
