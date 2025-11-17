@@ -1,0 +1,89 @@
+import { defineNitroPlugin } from 'nitropack'
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
+import { Resource } from '@opentelemetry/resources'
+import { NodeSDK } from '@opentelemetry/sdk-node'
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+
+let sdk: NodeSDK | null = null
+
+// ユーザー入力の OTLP_SERVER を正規化して HTTP Exporter が理解できる URL に変換
+const buildTraceEndpoint = (raw?: string | null): string | null => {
+  const trimmed = raw?.trim()
+  if (!trimmed) {
+    return null
+  }
+
+  if (trimmed.includes('://')) {
+    try {
+      const url = new URL(trimmed)
+      if (!url.hostname) {
+        return null
+      }
+
+      if (!url.pathname || url.pathname === '/') {
+        url.pathname = '/v1/traces'
+      }
+
+      return url.toString()
+    } catch (error) {
+      console.error('[telemetry] OTLP_SERVER の値が不正です', error)
+      return null
+    }
+  }
+
+  const normalized = trimmed.replace(/\/+$/, '')
+  if (!normalized) {
+    return null
+  }
+
+  return `http://${normalized}/v1/traces`
+}
+
+export default defineNitroPlugin(async (nitroApp) => {
+  if (sdk) {
+    return
+  }
+
+  const endpoint = buildTraceEndpoint(process.env.OTLP_SERVER)
+  if (!endpoint) {
+    console.info('[telemetry] OTLP_SERVER が未設定のため、SSR のトレース送信は無効です')
+    return
+  }
+
+  const resource = new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'mawinter-ssr',
+    [SemanticResourceAttributes.SERVICE_VERSION]:
+      process.env.NUXT_PUBLIC_APP_VERSION || process.env.npm_package_version || 'dev',
+  })
+
+  sdk = new NodeSDK({
+    resource,
+    traceExporter: new OTLPTraceExporter({ url: endpoint }),
+    instrumentations: [new HttpInstrumentation()],
+  })
+
+  try {
+    await sdk.start()
+    console.info('[telemetry] OpenTelemetry tracing enabled', endpoint)
+  } catch (error) {
+    console.error('[telemetry] OpenTelemetry の初期化に失敗しました', error)
+    sdk = null
+    return
+  }
+
+  nitroApp.hooks.hook('close', async () => {
+    if (!sdk) {
+      return
+    }
+
+    try {
+      await sdk.shutdown()
+      console.info('[telemetry] OpenTelemetry tracing stopped')
+    } catch (error) {
+      console.error('[telemetry] OpenTelemetry の終了処理に失敗しました', error)
+    } finally {
+      sdk = null
+    }
+  })
+})
