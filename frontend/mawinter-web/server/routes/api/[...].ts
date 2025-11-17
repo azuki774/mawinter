@@ -1,3 +1,5 @@
+import { context, propagation } from '@opentelemetry/api'
+
 /**
  * APIプロキシサーバー
  *
@@ -18,6 +20,17 @@ export default defineEventHandler(async (event) => {
   // バックエンドAPIの完全なURLを構築
   const targetUrl = `${config.mawinterApiUrl}${path}`
 
-  // すべてのHTTPメソッド（GET, POST, DELETE等）とヘッダーをそのまま転送
-  return proxyRequest(event, targetUrl)
+  // 既存ヘッダーをコピーし、OpenTelemetry のトレース情報を注入
+  const headers: Record<string, string> = {}
+  for (const [key, value] of Object.entries(event.req.headers)) {
+    if (typeof value === 'string') {
+      headers[key] = value
+    } else if (Array.isArray(value)) {
+      headers[key] = value.join(',')
+    }
+  }
+  propagation.inject(context.active(), headers)
+
+  // すべてのHTTPメソッドとカスタムヘッダーを転送
+  return proxyRequest(event, targetUrl, { headers })
 })
