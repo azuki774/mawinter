@@ -1,8 +1,12 @@
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
-import { Resource } from '@opentelemetry/resources'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+
+// @opentelemetry/resources is CommonJS, so import via default export
+import resources from '@opentelemetry/resources'
+
+const { Resource } = resources
 
 let sdk: NodeSDK | null = null
 
