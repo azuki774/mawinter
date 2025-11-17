@@ -7,7 +7,9 @@ import (
 	"github.com/azuki774/mawinter/api"
 	"github.com/azuki774/mawinter/internal/application"
 	"github.com/azuki774/mawinter/pkg/config"
+	"github.com/azuki774/mawinter/pkg/telemetry"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // Server は HTTP サーバの構造体
@@ -27,6 +29,7 @@ type Server struct {
 // NewServer は新しい HTTP サーバを作成
 func NewServer(host string, port int, version, revision, build string, dbInfo *config.DBInfo, categoryService *application.CategoryService, recordService *application.RecordService) *Server {
 	router := gin.Default()
+	router.Use(otelgin.Middleware(telemetry.ServiceNameAPI))
 
 	// プロキシを使わない設定
 	router.SetTrustedProxies(nil)
