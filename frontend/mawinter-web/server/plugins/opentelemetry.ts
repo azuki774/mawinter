@@ -3,6 +3,8 @@ import process from "node:process";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { NodeSDK } from "@opentelemetry/sdk-node";
+import * as resources from "@opentelemetry/resources";
+import * as semanticConventions from "@opentelemetry/semantic-conventions";
 import { defineNitroPlugin } from "#imports";
 
 const SERVICE_NAME = "mawinter-web";
@@ -43,11 +45,10 @@ export default defineNitroPlugin(async () => {
     return;
   }
 
-  if (!process.env.OTEL_SERVICE_NAME) {
-    process.env.OTEL_SERVICE_NAME = SERVICE_NAME;
-  }
-
   const sdk = new NodeSDK({
+    resource: new resources.Resource({
+      [semanticConventions.SemanticResourceAttributes.SERVICE_NAME]: SERVICE_NAME,
+    }),
     traceExporter: new OTLPTraceExporter({
       url: collectorURL,
     }),
