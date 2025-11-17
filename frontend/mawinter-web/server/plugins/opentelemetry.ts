@@ -1,4 +1,5 @@
 import process from "node:process";
+import { lookup as dnsLookup, type LookupFunction } from "node:dns";
 
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
@@ -47,9 +48,24 @@ export default defineNitroPlugin(async () => {
     process.env.OTEL_SERVICE_NAME = SERVICE_NAME;
   }
 
+  const forceIPv4Lookup: LookupFunction = (hostname, options, callback) => {
+    if (typeof options === "function") {
+      return dnsLookup(hostname, { family: 4, all: false }, options);
+    }
+
+    if (typeof options === "number") {
+      return dnsLookup(hostname, { family: 4, hints: options, all: false }, callback);
+    }
+
+    return dnsLookup(hostname, { ...options, family: 4, all: false }, callback);
+  };
+
   const sdk = new NodeSDK({
     traceExporter: new OTLPTraceExporter({
       url: collectorURL,
+      httpAgentOptions: {
+        lookup: forceIPv4Lookup,
+      },
     }),
     instrumentations: [getNodeAutoInstrumentations()],
   });
