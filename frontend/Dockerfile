@@ -38,7 +38,12 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # 必要なファイルのコピー
 COPY --from=builder --chown=nuxt:nodejs /app/.output /app/.output
 COPY --from=builder --chown=nuxt:nodejs /app/package.json /app/package.json
+COPY --from=builder --chown=nuxt:nodejs /app/pnpm-lock.yaml /app/pnpm-lock.yaml
 COPY --from=builder --chown=nuxt:nodejs /app/tracing.mjs /app/tracing.mjs
+
+# 本番用の依存関係をインストール（tracing.mjs が必要とする OpenTelemetry パッケージ）
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --prod --frozen-lockfile
 
 # 環境変数の設定（実行時にオーバーライド可能）
 ENV NUXT_PUBLIC_MAWINTER_API=""
