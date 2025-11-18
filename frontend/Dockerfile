@@ -38,6 +38,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # 必要なファイルのコピー
 COPY --from=builder --chown=nuxt:nodejs /app/.output /app/.output
 COPY --from=builder --chown=nuxt:nodejs /app/package.json /app/package.json
+COPY --from=builder --chown=nuxt:nodejs /app/tracing.mjs /app/tracing.mjs
 
 # 環境変数の設定（実行時にオーバーライド可能）
 ENV NUXT_PUBLIC_MAWINTER_API=""
@@ -50,5 +51,6 @@ EXPOSE 3000
 
 USER nuxt
 
-# Nuxt 3の本番サーバーを起動
-CMD ["node", "/app/.output/server/index.mjs"]
+# Nuxt 3の本番サーバーを起動（OpenTelemetry トレーシング有効）
+# OTLP_SERVER 環境変数が設定されている場合のみトレース送信が有効化されます
+CMD ["node", "--require", "./tracing.mjs", "/app/.output/server/index.mjs"]
