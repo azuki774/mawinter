@@ -43,6 +43,21 @@ pnpm build
 pnpm preview
 ```
 
+### 本番ビルドの起動（OpenTelemetry トレーシング有効）
+
+OpenTelemetry トレーシングを有効にして本番ビルドを起動する場合は、`--require` フラグで `tracing.mjs` を読み込みます。
+
+```bash
+# ビルド
+pnpm build
+
+# トレーシング有効で起動
+OTLP_SERVER=your-otlp-collector:4318 \
+  node --require ./tracing.mjs .output/server/index.mjs
+```
+
+注意: 開発モード (`pnpm dev`) ではトレーシングは完全には動作しません。トレーシングをテストする場合は本番ビルドで実行してください。
+
 ### 静的サイト生成
 
 静的な HTML ファイルとして出力します (SSG: Static Site Generation)。
@@ -93,8 +108,19 @@ MAWINTER_API_URL=https://your-api-server.com
 | 環境変数名          | 説明                                                     | デフォルト値           | スコープ         |
 | ------------------- | -------------------------------------------------------- | ---------------------- | ---------------- |
 | `MAWINTER_API_URL`  | バックエンド API サーバーの実際の URL（プロキシ転送先） | `http://localhost:8080` | サーバーサイド   |
+| `OTLP_SERVER`       | OpenTelemetry トレース送信先 OTLP コレクタ               | 未設定（トレース無効） | サーバーサイド   |
 
 API のベースエンドポイント (`/api`) は固定で、変更できません。
+
+#### OTLP_SERVER の設定例
+
+```bash
+# ホスト:ポート形式
+OTLP_SERVER=localhost:4318
+
+# 完全なURL形式
+OTLP_SERVER=http://grafana-k8s-monitoring-alloy-receiver.monitor.svc.cluster.local:4318/v1/traces
+```
 
 ### API 呼び出しの使い方
 

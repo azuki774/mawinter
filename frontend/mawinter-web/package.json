@@ -12,9 +12,8 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.67.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
-    "@opentelemetry/instrumentation-undici": "^0.19.0",
-    "@opentelemetry/resources": "^2.2.0",
     "@opentelemetry/sdk-node": "^0.208.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "chart.js": "^4.5.1",
