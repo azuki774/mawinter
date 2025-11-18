@@ -1,5 +1,5 @@
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
 
@@ -62,7 +62,7 @@ export default defineNitroPlugin(async (nitroApp) => {
   sdk = new NodeSDK({
     resource,
     traceExporter: new OTLPTraceExporter({ url: endpoint }),
-    instrumentations: [new HttpInstrumentation()],
+    instrumentations: [new UndiciInstrumentation()],
   })
 
   try {
