@@ -1,7 +1,7 @@
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { NodeSDK } from '@opentelemetry/sdk-node'
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
 
 // @opentelemetry/resources is CommonJS, so import via default export
 import * as resources from '@opentelemetry/resources'
@@ -52,16 +52,12 @@ export default defineNitroPlugin(async (nitroApp) => {
     return
   }
 
-  const { resourceFromAttributes, defaultResource } = resources
-  const attributes = {
-    [SemanticResourceAttributes.SERVICE_NAME]: 'mawinter-api',
-    [SemanticResourceAttributes.SERVICE_VERSION]:
+  const { resourceFromAttributes } = resources
+  const resource = resourceFromAttributes({
+    [ATTR_SERVICE_NAME]: 'mawinter-web',
+    [ATTR_SERVICE_VERSION]:
       process.env.NUXT_PUBLIC_APP_VERSION || process.env.npm_package_version || 'dev',
-  }
-  const baseResource = resourceFromAttributes(attributes)
-  const resource = defaultResource && typeof defaultResource.merge === 'function'
-    ? defaultResource.merge(baseResource)
-    : baseResource
+  })
 
   sdk = new NodeSDK({
     resource,
