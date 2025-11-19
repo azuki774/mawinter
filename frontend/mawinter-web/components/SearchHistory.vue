@@ -82,14 +82,14 @@ const fetchCount = async () => {
     totalCount.value = data
   } catch (error) {
     console.error('fetchCount エラー:', error)
-    totalCount.value = { count: 0 }
+    totalCount.value = { num: 0 }
   }
 }
 
 // ページネーション計算
 const totalPages = computed(() => {
   if (!totalCount.value) return 0
-  return Math.ceil(totalCount.value.count / searchParams.value.num)
+  return Math.ceil(totalCount.value.num / searchParams.value.num)
 })
 
 const currentPage = computed(() => {
@@ -233,7 +233,7 @@ onMounted(() => {
 
     <div v-else-if="records.length > 0" class="results">
       <p class="result-info">
-        全 {{ totalCount?.count || 0 }} 件中 {{ searchParams.offset + 1 }} - {{ Math.min(searchParams.offset + searchParams.num, totalCount?.count || 0) }} 件を表示
+        全 {{ totalCount?.num || 0 }} 件中 {{ searchParams.offset + 1 }} - {{ Math.min(searchParams.offset + searchParams.num, totalCount?.num || 0) }} 件を表示
       </p>
 
       <table class="records-table">
