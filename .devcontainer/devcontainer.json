@@ -121,12 +121,11 @@
     "DB_HOST": "db",
     "DB_PORT": "3306",
     "DB_USER": "root",
-    "DB_PASSWORD": "password",
+    "DB_PASS": "password",
     "DB_NAME": "mawinter",
     "GO111MODULE": "on",
     "GOPATH": "/home/vscode/go",
-    "PATH": "/home/vscode/go/bin:${containerEnv:PATH}",
-    "NUXT_PUBLIC_MAWINTER_API": "http://localhost:8080"
+    "PATH": "/home/vscode/go/bin:${containerEnv:PATH}"
   },
   "mounts": [
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,readonly,type=bind,consistency=cached"
