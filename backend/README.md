@@ -30,3 +30,9 @@ make bin
 # サーバ起動
 ./bin/mawinter serve
 ```
+
+## トレーシング
+
+- 環境変数 `OTLP_SERVER` に OTLP コレクタの `host:port`（例: `grafana-k8s-monitoring-alloy-receiver.monitor.svc.cluster.local:4318`）を設定すると、Gin と GORM のトレースが `http(s)://<host:port>/v1/traces` に送信されます。
+- 変数が未設定の場合はトレース機能を自動的に無効化します。
+- 終了時にはトレーサーを自動的にシャットダウンし、バッファ済みのスパンを送信します。

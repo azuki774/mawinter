@@ -3,11 +3,15 @@ package http
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/azuki774/mawinter/api"
+	"github.com/azuki774/mawinter/internal/adapter/http/middleware"
 	"github.com/azuki774/mawinter/internal/application"
 	"github.com/azuki774/mawinter/pkg/config"
+	"github.com/azuki774/mawinter/pkg/telemetry"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // Server は HTTP サーバの構造体
@@ -26,7 +30,19 @@ type Server struct {
 
 // NewServer は新しい HTTP サーバを作成
 func NewServer(host string, port int, version, revision, build string, dbInfo *config.DBInfo, categoryService *application.CategoryService, recordService *application.RecordService) *Server {
-	router := gin.Default()
+	router := gin.New()
+
+	// ミドルウェアを設定
+	router.Use(gin.Recovery())                                // panicからの回復
+	router.Use(middleware.Logger())                           // 構造化ログ（JSON形式）
+	// ヘルスチェック(/api/v3)は高頻度アクセスでノイズになるためトレースを除外する
+	router.Use(otelgin.Middleware(
+		telemetry.ServiceNameAPI,
+		otelgin.WithFilter(func(r *http.Request) bool {
+			path := r.URL.Path
+			return path != "/api/v3" && path != "/api/v3/"
+		}),
+	)) // OpenTelemetryトレーシング
 
 	// プロキシを使わない設定
 	router.SetTrustedProxies(nil)
