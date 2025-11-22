@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/azuki774/mawinter/api"
 	"github.com/azuki774/mawinter/internal/adapter/http/middleware"
@@ -34,7 +35,14 @@ func NewServer(host string, port int, version, revision, build string, dbInfo *c
 	// ミドルウェアを設定
 	router.Use(gin.Recovery())                                // panicからの回復
 	router.Use(middleware.Logger())                           // 構造化ログ（JSON形式）
-	router.Use(otelgin.Middleware(telemetry.ServiceNameAPI)) // OpenTelemetryトレーシング
+	// ヘルスチェック(/api/v3)は高頻度アクセスでノイズになるためトレースを除外する
+	router.Use(otelgin.Middleware(
+		telemetry.ServiceNameAPI,
+		otelgin.WithFilter(func(r *http.Request) bool {
+			path := r.URL.Path
+			return path != "/api/v3" && path != "/api/v3/"
+		}),
+	)) // OpenTelemetryトレーシング
 
 	// プロキシを使わない設定
 	router.SetTrustedProxies(nil)
