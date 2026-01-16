@@ -44,6 +44,20 @@ const submitRecord = async () => {
   errorMessage.value = ''
   successMessage.value = ''
 
+  // バリデーション: 数値チェック
+  if (typeof formData.value.price !== 'number' || isNaN(formData.value.price)) {
+    errorMessage.value = '金額は数値を入力してください'
+    isSubmitting.value = false
+    return
+  }
+
+  // バリデーション: 0は許可しない
+  if (formData.value.price === 0) {
+    errorMessage.value = '金額は0以外の値を入力してください'
+    isSubmitting.value = false
+    return
+  }
+
   try {
     // datetime を RFC3339 形式に変換
     const datetimeRFC3339 = new Date(formData.value.datetime).toISOString()
@@ -115,7 +129,6 @@ const submitRecord = async () => {
           v-model.number="formData.price"
           type="number"
           required
-          min="0"
         >
       </div>
 
