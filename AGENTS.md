@@ -157,7 +157,7 @@ func TestCategoryService_GetAllCategories(t *testing.T) {
 ## 技術スタック
 
 ### バックエンド
-- **言語**: Go 1.25.3
+- **言語**: Go 1.25.5
 - **Web フレームワーク**: Gin (v1.11.0)
 - **API 仕様**: OpenAPI 3.1.0
 - **コード生成**: oapi-codegen (OpenAPI から Go コードを自動生成)
