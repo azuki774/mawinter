@@ -144,6 +144,34 @@ const formatPrice = (price) => {
   return price.toLocaleString('ja-JP') + '円'
 }
 
+// レコード削除
+const deleteRecord = async (id) => {
+  if (!confirm(`ID: ${id} のレコードを削除しますか？`)) {
+    return
+  }
+
+  pending.value = true
+  try {
+    const config = useRuntimeConfig()
+    const url = `${config.public.mawinterApi}/api/v3/record/${id}`
+
+    const response = await fetch(url, {
+      method: 'DELETE'
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    await Promise.all([fetchRecords(), fetchCount()])
+  } catch (error) {
+    console.error('deleteRecord エラー:', error)
+    alert('削除に失敗しました')
+  } finally {
+    pending.value = false
+  }
+}
+
 // 初回データ取得
 onMounted(() => {
   // ページロード時にデータを取得
@@ -245,6 +273,7 @@ onMounted(() => {
             <th>送信元</th>
             <th>金額</th>
             <th>メモ</th>
+            <th>削除</th>
           </tr>
         </thead>
         <tbody>
@@ -260,6 +289,15 @@ onMounted(() => {
               {{ formatPrice(record.price) }}
             </td>
             <td>{{ record.memo || '-' }}</td>
+            <td class="delete-cell">
+              <button
+                class="delete-button"
+                :disabled="pending"
+                @click="deleteRecord(record.id)"
+              >
+                削除
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -423,6 +461,31 @@ onMounted(() => {
 .page-info {
   font-weight: bold;
   color: #333;
+}
+
+.delete-cell {
+  text-align: center;
+}
+
+.delete-button {
+  padding: 0.4rem 0.8rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.delete-button:disabled {
+  background-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
