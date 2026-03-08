@@ -27,63 +27,19 @@ const handleRecordCreated = () => {
 </script>
 
 <template>
-  <section>
-    <header>
-      <h1>mawinter-web</h1>
-      <nav>
-        <ul>
-          <li>
-            <NuxtLink to="/graph">グラフ</NuxtLink>
-          </li>
-          <li>
-            <NuxtLink to="/summary">サマリー</NuxtLink>
-          </li>
-        </ul>
-      </nav>
-    </header>
-
-    <section>
-      <h2>登録</h2>
+  <div>
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold text-slate-800 mb-3">
+        登録
+      </h2>
       <PostRecord @record-created="handleRecordCreated" />
     </section>
 
     <section>
-      <h2>履歴検索</h2>
-      <div class="container-sm">
-        <SearchHistory :key="searchHistoryKey" />
-      </div>
+      <h2 class="text-lg font-semibold text-slate-800 mb-3">
+        履歴検索
+      </h2>
+      <SearchHistory :key="searchHistoryKey" />
     </section>
-  </section>
+  </div>
 </template>
-
-<style scoped>
-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 1rem 0;
-}
-
-nav li {
-  margin: 0.5rem 0;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  background-color: #0066cc;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-nav a:hover {
-  background-color: #0052a3;
-}
-
-.container-sm {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-</style>
