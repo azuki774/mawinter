@@ -180,14 +180,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="search-history">
-    <div class="search-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="yyyymm">年月</label>
+  <div>
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 mb-5">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label for="yyyymm" class="block text-sm font-medium text-slate-700 mb-1">
+            年月
+          </label>
           <select
             id="yyyymm"
             v-model="searchParams.yyyymm"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           >
             <option value="">
               全て
@@ -202,11 +205,14 @@ onMounted(() => {
           </select>
         </div>
 
-        <div class="form-group">
-          <label for="category">カテゴリ</label>
+        <div>
+          <label for="category" class="block text-sm font-medium text-slate-700 mb-1">
+            カテゴリ
+          </label>
           <select
             id="category"
             v-model="searchParams.category_id"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           >
             <option :value="null">
               全て
@@ -221,11 +227,14 @@ onMounted(() => {
           </select>
         </div>
 
-        <div class="form-group">
-          <label for="num">表示件数</label>
+        <div>
+          <label for="num" class="block text-sm font-medium text-slate-700 mb-1">
+            表示件数
+          </label>
           <select
             id="num"
             v-model.number="searchParams.num"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           >
             <option :value="10">
               10件
@@ -244,8 +253,8 @@ onMounted(() => {
       </div>
 
       <button
-        class="search-button"
         :disabled="pending"
+        class="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
         @click="search"
       >
         {{ pending ? '検索中...' : '検索' }}
@@ -254,67 +263,98 @@ onMounted(() => {
 
     <div
       v-if="pending"
-      class="loading"
+      class="text-sm text-slate-500 py-8 text-center"
     >
       読み込み中...
     </div>
 
-    <div v-else-if="records.length > 0" class="results">
-      <p class="result-info">
+    <div v-else-if="records.length > 0">
+      <p class="text-sm text-slate-500 mb-3">
         全 {{ totalCount?.num || 0 }} 件中 {{ searchParams.offset + 1 }} - {{ Math.min(searchParams.offset + searchParams.num, totalCount?.num || 0) }} 件を表示
       </p>
 
-      <table class="records-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>日時</th>
-            <th>カテゴリ</th>
-            <th>送信元</th>
-            <th>金額</th>
-            <th>メモ</th>
-            <th>削除</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="record in records"
-            :key="record.id"
-          >
-            <td>{{ record.id }}</td>
-            <td>{{ formatDateTime(record.datetime) }}</td>
-            <td>{{ getCategoryName(record.category_id) }}</td>
-            <td>{{ record.from || '-' }}</td>
-            <td class="price">
-              {{ formatPrice(record.price) }}
-            </td>
-            <td>{{ record.memo || '-' }}</td>
-            <td class="delete-cell">
-              <button
-                class="delete-button"
-                :disabled="pending"
-                @click="deleteRecord(record.id)"
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="text-left px-4 py-3 font-semibold text-slate-600">
+                  ID
+                </th>
+                <th class="text-left px-4 py-3 font-semibold text-slate-600 whitespace-nowrap">
+                  日時
+                </th>
+                <th class="text-left px-4 py-3 font-semibold text-slate-600">
+                  カテゴリ
+                </th>
+                <th class="text-left px-4 py-3 font-semibold text-slate-600">
+                  送信元
+                </th>
+                <th class="text-right px-4 py-3 font-semibold text-slate-600">
+                  金額
+                </th>
+                <th class="text-left px-4 py-3 font-semibold text-slate-600">
+                  メモ
+                </th>
+                <th class="text-center px-4 py-3 font-semibold text-slate-600">
+                  削除
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr
+                v-for="record in records"
+                :key="record.id"
+                class="hover:bg-slate-50/50 transition-colors"
               >
-                削除
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <td class="px-4 py-3 text-slate-600">
+                  {{ record.id }}
+                </td>
+                <td class="px-4 py-3 text-slate-600 whitespace-nowrap">
+                  {{ formatDateTime(record.datetime) }}
+                </td>
+                <td class="px-4 py-3 text-slate-700">
+                  {{ getCategoryName(record.category_id) }}
+                </td>
+                <td class="px-4 py-3 text-slate-500">
+                  {{ record.from || '-' }}
+                </td>
+                <td class="px-4 py-3 text-right font-semibold text-slate-800 tabular-nums">
+                  {{ formatPrice(record.price) }}
+                </td>
+                <td class="px-4 py-3 text-slate-600">
+                  {{ record.memo || '-' }}
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    :disabled="pending"
+                    class="rounded-md bg-red-500 px-3 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+                    @click="deleteRecord(record.id)"
+                  >
+                    削除
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div
         v-if="totalPages > 1"
-        class="pagination"
+        class="flex items-center justify-center gap-4 mt-4"
       >
         <button
           :disabled="currentPage === 1"
+          class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
           @click="changePage(currentPage - 1)"
         >
           前へ
         </button>
-        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+        <span class="text-sm font-semibold text-slate-700">{{ currentPage }} / {{ totalPages }}</span>
         <button
           :disabled="currentPage === totalPages"
+          class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
           @click="changePage(currentPage + 1)"
         >
           次へ
@@ -324,178 +364,9 @@ onMounted(() => {
 
     <div
       v-else
-      class="no-results"
+      class="text-sm text-slate-500 py-8 text-center"
     >
       記録が見つかりませんでした
     </div>
   </div>
 </template>
-
-<style scoped>
-.search-history {
-  margin: 2rem 0;
-}
-
-.search-form {
-  padding: 1rem;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.25rem;
-  font-weight: bold;
-  color: #333;
-  font-size: 0.9rem;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.search-button {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.search-button:hover:not(:disabled) {
-  background-color: #0052a3;
-}
-
-.search-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-}
-
-.loading,
-.no-results {
-  text-align: center;
-  padding: 2rem;
-  color: #666;
-}
-
-.result-info {
-  margin-bottom: 1rem;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.records-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.records-table th,
-.records-table td {
-  padding: 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-.records-table th {
-  background-color: #f8f9fa;
-  font-weight: bold;
-  color: #333;
-}
-
-.records-table tr:hover {
-  background-color: #f8f9fa;
-}
-
-.records-table td.price {
-  text-align: right;
-  font-weight: bold;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.pagination button {
-  padding: 0.5rem 1rem;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.pagination button:hover:not(:disabled) {
-  background-color: #0052a3;
-}
-
-.pagination button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.page-info {
-  font-weight: bold;
-  color: #333;
-}
-
-.delete-cell {
-  text-align: center;
-}
-
-.delete-button {
-  padding: 0.4rem 0.8rem;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.delete-button:hover:not(:disabled) {
-  background-color: #c82333;
-}
-
-.delete-button:disabled {
-  background-color: #e9ecef;
-  color: #6c757d;
-  cursor: not-allowed;
-}
-
-@media (max-width: 768px) {
-  .records-table {
-    font-size: 0.85rem;
-  }
-
-  .records-table th,
-  .records-table td {
-    padding: 0.5rem;
-  }
-}
-</style>

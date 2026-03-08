@@ -141,8 +141,8 @@ const monthlyChartData = computed(() => {
     type: 'line',
     label: '収入合計',
     data: incomeData,
-    borderColor: 'rgb(75, 192, 192)',
-    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+    borderColor: 'rgb(16, 185, 129)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
     borderWidth: 2,
     tension: 0.1
   })
@@ -209,21 +209,26 @@ const monthlyChartOptions = {
   maintainAspectRatio: false,
   plugins: {
     title: {
-      display: true,
-      text: '月次収支推移'
+      display: false
     },
     legend: {
-      position: 'bottom'
+      position: 'bottom',
+      labels: {
+        boxWidth: 12,
+        padding: 12,
+        font: { size: 11 }
+      }
     }
   },
   scales: {
     x: {
-      stacked: true
+      stacked: true,
+      grid: { display: false }
     },
     y: {
       stacked: true,
       ticks: {
-        callback: (value) => `¥${value.toLocaleString()}`
+        callback: (value) => `${value.toLocaleString()}`
       }
     }
   }
@@ -234,8 +239,7 @@ const categoryChartOptions = {
   maintainAspectRatio: false,
   plugins: {
     title: {
-      display: true,
-      text: 'カテゴリ別年間支出'
+      display: false
     },
     legend: {
       display: false
@@ -244,57 +248,52 @@ const categoryChartOptions = {
   scales: {
     y: {
       ticks: {
-        callback: (value) => `¥${value.toLocaleString()}`
+        callback: (value) => `${value.toLocaleString()}`
       }
+    },
+    x: {
+      grid: { display: false }
     }
   }
 }
 </script>
 
 <template>
-  <section>
-    <header>
-      <h1>グラフ</h1>
-      <nav>
-        <ul>
-          <li>
-            <NuxtLink to="/">トップ</NuxtLink>
-          </li>
-        </ul>
-      </nav>
-    </header>
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800 mb-4">
+      グラフ
+    </h1>
 
-    <!-- 年度選択 -->
-    <section>
-      <div class="year-selector">
-        <label for="year-select">年度: </label>
-        <select
-          id="year-select"
-          v-model="selectedYear"
-          :disabled="isLoadingYears"
+    <div class="flex items-center gap-3 mb-6">
+      <label class="text-sm font-semibold text-slate-700" for="year-select">
+        年度
+      </label>
+      <select
+        id="year-select"
+        v-model="selectedYear"
+        :disabled="isLoadingYears"
+        class="rounded-md border border-slate-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+      >
+        <option
+          v-for="year in availableYears"
+          :key="year"
+          :value="year"
         >
-          <option
-            v-for="year in availableYears"
-            :key="year"
-            :value="year"
-          >
-            {{ year }}年度
-          </option>
-        </select>
-      </div>
-    </section>
+          {{ year }}年度
+        </option>
+      </select>
+    </div>
 
-    <!-- ローディング表示 -->
-    <section v-if="isLoadingSummary">
-      <p>読み込み中...</p>
-    </section>
+    <div v-if="isLoadingSummary" class="text-sm text-slate-500 py-12 text-center">
+      読み込み中...
+    </div>
 
-    <!-- グラフ表示 -->
-    <section v-else>
-      <!-- 月次支出推移グラフ -->
-      <div class="chart-container">
-        <h2>月次収支推移</h2>
-        <div class="chart-wrapper">
+    <div v-else class="space-y-6">
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6">
+        <h2 class="text-base font-semibold text-slate-800 mb-4">
+          月次収支推移
+        </h2>
+        <div class="h-[400px] relative">
           <Bar
             :data="monthlyChartData"
             :options="monthlyChartOptions"
@@ -302,85 +301,17 @@ const categoryChartOptions = {
         </div>
       </div>
 
-      <!-- カテゴリ別支出グラフ -->
-      <div class="chart-container">
-        <h2>カテゴリ別年間支出</h2>
-        <div class="chart-wrapper">
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6">
+        <h2 class="text-base font-semibold text-slate-800 mb-4">
+          カテゴリ別年間支出
+        </h2>
+        <div class="h-[400px] relative">
           <Bar
             :data="categoryChartData"
             :options="categoryChartOptions"
           />
         </div>
       </div>
-    </section>
-  </section>
+    </div>
+  </div>
 </template>
-
-<style scoped>
-section {
-  padding: 1rem;
-}
-
-h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-h2 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.year-selector {
-  margin: 1rem 0;
-}
-
-.year-selector label {
-  margin-right: 0.5rem;
-  font-weight: bold;
-}
-
-.year-selector select {
-  padding: 0.5rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.chart-container {
-  margin: 2rem 0;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background-color: #fff;
-}
-
-.chart-wrapper {
-  height: 400px;
-  position: relative;
-}
-
-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 1rem 0;
-}
-
-nav li {
-  margin: 0.5rem 0;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  background-color: #0066cc;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-nav a:hover {
-  background-color: #0052a3;
-}
-</style>

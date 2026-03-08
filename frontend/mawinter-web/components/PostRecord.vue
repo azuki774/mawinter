@@ -68,7 +68,7 @@ const submitRecord = async () => {
       body: {
         category_id: formData.value.category_id,
         datetime: datetimeRFC3339,
-        from: 'mawinter-web', // システム固定値
+        from: 'mawinter-web',
         type: formData.value.type,
         price: formData.value.price,
         memo: formData.value.memo
@@ -93,157 +93,89 @@ const submitRecord = async () => {
 </script>
 
 <template>
-  <div class="post-record">
-    <form @submit.prevent="submitRecord">
-      <div class="form-group">
-        <label for="category">カテゴリ</label>
-        <select
-          id="category"
-          v-model.number="formData.category_id"
-          required
-        >
-          <option
-            v-for="cat in categories"
-            :key="cat.category_id"
-            :value="cat.category_id"
+  <div class="max-w-xl mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
+      <form class="space-y-4" @submit.prevent="submitRecord">
+        <div>
+          <label for="category" class="block text-sm font-medium text-slate-700 mb-1">
+            カテゴリ
+          </label>
+          <select
+            id="category"
+            v-model.number="formData.category_id"
+            required
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           >
-            {{ cat.category_name }}
-          </option>
-        </select>
-      </div>
+            <option
+              v-for="cat in categories"
+              :key="cat.category_id"
+              :value="cat.category_id"
+            >
+              {{ cat.category_name }}
+            </option>
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label for="datetime">日時</label>
-        <input
-          id="datetime"
-          v-model="formData.datetime"
-          type="datetime-local"
-          required
-        >
-      </div>
+        <div>
+          <label for="datetime" class="block text-sm font-medium text-slate-700 mb-1">
+            日時
+          </label>
+          <input
+            id="datetime"
+            v-model="formData.datetime"
+            type="datetime-local"
+            required
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          >
+        </div>
 
-      <div class="form-group">
-        <label for="price">金額</label>
-        <input
-          id="price"
-          v-model.number="formData.price"
-          type="number"
-          required
-        >
-      </div>
+        <div>
+          <label for="price" class="block text-sm font-medium text-slate-700 mb-1">
+            金額
+          </label>
+          <input
+            id="price"
+            v-model.number="formData.price"
+            type="number"
+            required
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          >
+        </div>
 
-      <div class="form-group">
-        <label for="memo">メモ</label>
-        <input
-          id="memo"
-          v-model="formData.memo"
-          type="text"
-          placeholder="メモ（任意）"
-        >
-      </div>
+        <div>
+          <label for="memo" class="block text-sm font-medium text-slate-700 mb-1">
+            メモ
+          </label>
+          <input
+            id="memo"
+            v-model="formData.memo"
+            type="text"
+            placeholder="メモ（任意）"
+            class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          >
+        </div>
 
-      <div class="form-actions">
         <button
           type="submit"
           :disabled="isSubmitting"
+          class="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
         >
           {{ isSubmitting ? '送信中...' : '登録' }}
         </button>
-      </div>
 
-      <div
-        v-if="errorMessage"
-        class="message error"
-      >
-        {{ errorMessage }}
-      </div>
-      <div
-        v-if="successMessage"
-        class="message success"
-      >
-        {{ successMessage }}
-      </div>
-    </form>
+        <div
+          v-if="errorMessage"
+          class="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700"
+        >
+          {{ errorMessage }}
+        </div>
+        <div
+          v-if="successMessage"
+          class="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700"
+        >
+          {{ successMessage }}
+        </div>
+      </form>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.post-record {
-  max-width: 600px;
-  margin: 1rem auto;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.25rem;
-  font-weight: bold;
-  color: #333;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #0066cc;
-}
-
-.form-actions {
-  margin-top: 1.5rem;
-}
-
-.form-actions button {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.form-actions button:hover:not(:disabled) {
-  background-color: #218838;
-}
-
-.form-actions button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-}
-
-.message {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  border-radius: 4px;
-}
-
-.message.error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.message.success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-</style>

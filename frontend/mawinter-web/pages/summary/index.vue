@@ -27,8 +27,6 @@ const outgoingCategoryOrder = [
   { id: 500, label: '雑費' }
 ]
 const investingCategoryOrder = [
-  // { id: 600, label: '家賃用貯金' },
-  // { id: 601, label: 'PC用貯金' },
   { id: 700, label: 'NISA入出金' },
   { id: 701, label: 'NISA変動' }
 ]
@@ -247,6 +245,20 @@ const hasSummaryData = computed(() => {
 })
 const isDropdownDisabled = computed(() => isLoadingYears.value || availableYears.value.length === 0)
 
+const sectionLabels = {
+  total: '累計',
+  income: '収入',
+  outgoing: '支出',
+  investing: '投資'
+}
+
+const sectionColors = {
+  total: 'border-l-amber-400',
+  income: 'border-l-emerald-400',
+  outgoing: 'border-l-red-400',
+  investing: 'border-l-violet-400'
+}
+
 onMounted(async () => {
   await fetchAvailableYears()
   if (selectedYear.value) {
@@ -262,230 +274,106 @@ watch(selectedYear, (newYear, oldYear) => {
 </script>
 
 <template>
-  <section class="summary-page">
-    <header>
-      <h1>サマリー</h1>
-      <nav>
-        <ul>
-          <li>
-            <NuxtLink to="/">トップ</NuxtLink>
-          </li>
-          <li>
-            <NuxtLink to="/graph">グラフ</NuxtLink>
-          </li>
-        </ul>
-      </nav>
-    </header>
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800 mb-4">
+      サマリー
+    </h1>
 
-    <section class="controls">
-      <label class="control-label" for="year-select">
+    <div class="flex items-center gap-3 mb-6">
+      <label class="text-sm font-semibold text-slate-700" for="year-select">
         表示年度
       </label>
-      <select id="year-select" v-model.number="selectedYear" :disabled="isDropdownDisabled">
+      <select
+        id="year-select"
+        v-model.number="selectedYear"
+        :disabled="isDropdownDisabled"
+        class="rounded-md border border-slate-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed min-w-[140px]"
+      >
         <option v-for="year in availableYears" :key="year" :value="year">
           {{ year }}年度
         </option>
       </select>
-      <p v-if="isLoadingYears" class="state-text">
+      <p v-if="isLoadingYears" class="text-sm text-slate-500">
         年度を取得中...
       </p>
-      <p v-else-if="yearError" class="state-text state-text--error">
+      <p v-else-if="yearError" class="text-sm text-red-600">
         {{ yearError }}
       </p>
-    </section>
+    </div>
 
-    <section>
-      <p v-if="isLoadingSummary" class="state-text">
+    <div>
+      <p v-if="isLoadingSummary" class="text-sm text-slate-500 py-8 text-center">
         サマリーを読み込み中です...
       </p>
-      <p v-else-if="summaryError" class="state-text state-text--error">
+      <p v-else-if="summaryError" class="text-sm text-red-600 py-8 text-center">
         {{ summaryError }}
       </p>
-      <p v-else-if="!hasSummaryData" class="state-text">
+      <p v-else-if="!hasSummaryData" class="text-sm text-slate-500 py-8 text-center">
         表示できるサマリーデータがありません。
       </p>
-      <div v-else>
-        <div v-for="section in ['total', 'income', 'outgoing', 'investing']" :key="section" class="table-wrapper">
-          <h2 class="table-title">
-            {{ section === 'total' ? '累計' : section === 'income' ? '収入' : section === 'outgoing' ? '支出' : '投資' }}
+      <div v-else class="space-y-6">
+        <div
+          v-for="section in ['total', 'income', 'outgoing', 'investing']"
+          :key="section"
+          class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden"
+        >
+          <h2
+            class="text-base font-semibold text-slate-800 px-4 py-3 bg-slate-50 border-b border-slate-200 border-l-4"
+            :class="sectionColors[section]"
+          >
+            {{ sectionLabels[section] }}
           </h2>
-          <table class="summary-table">
-            <thead>
-              <tr>
-                <th scope="col" class="label-col">
-                  区分
-                </th>
-                <th v-for="month in months" :key="month" scope="col" class="numeric month-col">
-                  {{ month }}
-                </th>
-                <th scope="col" class="numeric total-col">
-                  合計
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="row in groupedSummary[section]"
-                :key="section + row.label"
-                class="metric-row"
-                :class="`metric-row--${row.theme}`"
-              >
-                <th scope="row" class="label-col">
-                  {{ row.label }}
-                </th>
-                <td
-                  v-for="(value, index) in row.monthly"
-                  :key="`${section}-${row.label}-${index}`"
-                  class="numeric month-col"
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-50">
+                  <th scope="col" class="text-left px-3 py-2 font-semibold text-slate-600 whitespace-nowrap sticky left-0 bg-slate-50 min-w-[120px]">
+                    区分
+                  </th>
+                  <th
+                    v-for="month in months"
+                    :key="month"
+                    scope="col"
+                    class="text-right px-3 py-2 font-semibold text-slate-600 whitespace-nowrap min-w-[70px]"
+                  >
+                    {{ month }}
+                  </th>
+                  <th scope="col" class="text-right px-3 py-2 font-semibold text-slate-600 whitespace-nowrap min-w-[100px]">
+                    合計
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr
+                  v-for="row in groupedSummary[section]"
+                  :key="section + row.label"
+                  class="hover:bg-slate-50/50 transition-colors"
+                  :class="{
+                    'bg-amber-50 font-semibold': row.theme === 'total',
+                    'bg-emerald-50 font-semibold': row.theme === 'income' && row.label === '収入合計',
+                    'bg-red-50 font-semibold': row.theme === 'outgoing' && row.label === '支出合計',
+                    'bg-violet-50 font-semibold': row.theme === 'investing' && row.label === '投資合計'
+                  }"
                 >
-                  {{ value.toLocaleString() }}
-                </td>
-                <td class="numeric total-col">
-                  {{ row.total.toLocaleString() }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  <th scope="row" class="text-left px-3 py-2 text-slate-700 whitespace-nowrap sticky left-0 bg-inherit">
+                    {{ row.label }}
+                  </th>
+                  <td
+                    v-for="(value, index) in row.monthly"
+                    :key="`${section}-${row.label}-${index}`"
+                    class="text-right px-3 py-2 text-slate-600 tabular-nums"
+                  >
+                    {{ value.toLocaleString() }}
+                  </td>
+                  <td class="text-right px-3 py-2 text-slate-800 font-semibold tabular-nums">
+                    {{ row.total.toLocaleString() }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </section>
-  </section>
+    </div>
+  </div>
 </template>
-
-<style scoped>
-.summary-page {
-  padding: 1rem;
-}
-
-header {
-  margin-bottom: 1rem;
-}
-
-h1 {
-  margin: 0;
-}
-
-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0.5rem 0 0;
-  display: flex;
-  gap: 0.5rem;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0.35rem 0.75rem;
-  background-color: #0066cc;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-nav a:hover {
-  background-color: #0052a3;
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.control-label {
-  font-weight: 600;
-}
-
-select {
-  padding: 0.4rem 0.6rem;
-  border-radius: 4px;
-  border: 1px solid #d1d5db;
-  min-width: 140px;
-}
-
-.state-text {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #4b5563;
-}
-
-.state-text--error {
-  color: #c62828;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-.summary-table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
-}
-
-.table-title {
-  margin: 1.5rem 0 0.5rem;
-  font-size: 1.25rem;
-}
-
-.summary-table th,
-.summary-table td {
-  border: 1px solid #e5e7eb;
-  padding: 0.5rem;
-}
-
-.summary-table th {
-  text-align: left;
-  background-color: #f9fafb;
-}
-
-.summary-table th.numeric,
-.summary-table td.numeric {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.label-col {
-  width: 140px;
-  white-space: nowrap;
-}
-
-.month-col {
-  width: 70px;
-}
-
-.total-col {
-  width: 110px;
-}
-
-.metric-row--total {
-  background-color: #fff7cc;
-}
-
-.metric-row--total:nth-child(2) {
-  background-color: #ffedb5;
-}
-
-.metric-row--income:not(:last-child),
-.metric-row--outgoing,
-.metric-row--investing {
-  background-color: #fff;
-}
-
-.metric-row--income:last-child {
-  background-color: #e5f5d9;
-}
-
-.metric-row--outgoing:last-child {
-  background-color: #fde2e2;
-}
-
-.metric-row--investing:last-child {
-  background-color: #f0e7ff;
-}
-</style>
