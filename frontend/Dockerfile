@@ -4,7 +4,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # pnpmのインストール
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # 依存関係のインストール（キャッシュ最適化）
 COPY mawinter-web/package.json mawinter-web/pnpm-lock.yaml ./
@@ -33,7 +33,7 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nuxt -u 1001
 
 # pnpmのインストール
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # 必要なファイルのコピー
 COPY --from=builder --chown=nuxt:nodejs /app/.output /app/.output
