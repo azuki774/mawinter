@@ -1,0 +1,72 @@
+name: mawinter-apidev
+
+# API 開発用のローカル環境
+# DB とマイグレーション、ダミーデータ投入を手軽に行うための compose
+# パスワード等はテスト用のベタ書き
+# docker / podman どちらでも利用可能 (podman の場合は `podman compose` に読み替え)
+#
+# 使い方:
+#   docker compose -f deployment/compose-for-apidev.yml up -d db
+#   # podman の場合: podman compose -f deployment/compose-for-apidev.yml up -d db
+#   make -C backend migrate-up          # マイグレーション
+#   make -C backend seed                # ダミーデータ投入
+#   docker compose -f deployment/compose-for-apidev.yml --profile tools up -d  # phpMyAdmin (任意)
+#   docker compose -f deployment/compose-for-apidev.yml --profile api up -d    # API コンテナ (任意)
+
+services:
+  db:
+    image: docker.io/library/mariadb:10.11.14
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: mawinter
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  phpmyadmin:
+    image: docker.io/phpmyadmin:latest
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: password
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8081:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - tools
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASS: password
+      DB_NAME: mawinter
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - api
+
+volumes:
+  mysql-data:

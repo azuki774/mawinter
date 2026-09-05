@@ -2,6 +2,24 @@
 
 Go/Nuxt 製の家計簿サーバ
 
+## ローカル開発 (API 開発用)
+
+```bash
+# DB 起動
+docker compose -f deployment/compose-for-apidev.yml up -d db
+
+# マイグレーション
+make -C backend migrate-up
+
+# ダミーデータ投入
+make -C backend seed
+
+# API 起動 (ホスト)
+go run ./backend/cmd/mawinter serve --port 8080
+```
+
+詳細は `deployment/README.md` と `AGENTS.md` を参照
+
 ## frontend
 
 - Nuxt3 製の Web 画面

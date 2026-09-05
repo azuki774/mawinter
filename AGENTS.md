@@ -171,9 +171,9 @@ func TestCategoryService_GetAllCategories(t *testing.T) {
 - **パッケージマネージャ**: pnpm
 
 ### 開発環境
-- **コンテナ**: Dev Containers (VS Code Remote Containers)
-- **ベースイメージ**: Ubuntu 24.04
-- **ツール**: GitHub CLI, Claude Code, phpMyAdmin
+- **コンテナ**: Docker Compose / Podman Compose (MariaDB + phpMyAdmin + 任意で API)
+- **ベースイメージ**: Ubuntu 24.04 (ホスト開発) / golang:1.25 (API コンテナ)
+- **ツール**: GitHub CLI, Claude Code, phpMyAdmin, sql-migrate
 
 ## アーキテクチャ
 
@@ -227,20 +227,22 @@ internal/
 │   └── (Nuxt プロジェクト構成)
 │
 ├── db/                        # データベース設定
-│   ├── dbconfig.yml           # マイグレーション設定
-│   └── migrations/            # SQL マイグレーションファイル
-│       ├── 001_init.sql
-│       ├── 002_add_monthly_fix_records.sql
-│       ├── 003_add_monthly_confirm.sql
-│       └── 004_rename_record_table.sql
+│   ├── dbconfig.yml           # マイグレーション設定 (local/docker)
+│   ├── migrations/            # SQL マイグレーションファイル
+│   │   ├── 001_init.sql
+│   │   ├── 002_add_monthly_fix_records.sql
+│   │   ├── 003_add_monthly_confirm.sql
+│   │   ├── 004_rename_record_table.sql
+│   │   └── 005_add_category_type.sql
+│   └── seed/                  # ダミーデータ
+│       └── dummy.sql          # API 開発用ダミーデータ (Record 200件等)
+│
+├── deployment/                # ローカル開発用 compose
+│   ├── compose-for-apidev.yml # API 開発用 DB 環境 (MariaDB + phpMyAdmin + api)
+│   └── README.md              # 使い方
 │
 ├── api/                       # OpenAPI 仕様 (信頼できる唯一の情報源)
 │   └── mawinter-api-v3.yaml   # API 定義
-│
-├── .devcontainer/             # Dev Container 設定
-│   ├── devcontainer.json      # VS Code リモート設定
-│   ├── compose.yml            # Docker Compose サービス
-│   └── setup.sh               # 環境セットアップスクリプト
 │
 ├── CLAUDE.md                  # Claude Code プロジェクト指示書
 └── README.md                  # プロジェクト README
@@ -251,11 +253,20 @@ internal/
 ### Makefile コマンド (backend)
 
 ```bash
-make setup      # ツールのインストール (oapi-codegen, 依存関係)
-make generate   # OpenAPI 仕様から Go コードを生成
-make bin        # 静的バイナリをビルド (CGO_ENABLED=0)
-make clean      # 生成ファイルとバイナリを削除
-make help       # 利用可能なターゲットを表示
+make setup          # ツールのインストール (oapi-codegen, 依存関係)
+make generate       # OpenAPI 仕様から Go コードを生成
+make bin            # 静的バイナリをビルド (CGO_ENABLED=0)
+make clean          # 生成ファイルとバイナリを削除
+make help           # 利用可能なターゲットを表示
+
+# DB/マイグレーション/シード (deployment/compose-for-apidev.yml を使用)
+make db-up          # DB コンテナ起動
+make db-down        # DB コンテナ停止
+make db-reset       # DB リセット + マイグレーション + シード
+make migrate-up     # マイグレーション実行 (sql-migrate)
+make migrate-status # マイグレーション状態確認
+make migrate-down   # マイグレーション差し戻し
+make seed           # ダミーデータ投入 (db/seed/dummy.sql)
 ```
 
 ### アプリケーション実行
@@ -332,21 +343,50 @@ go run cmd/mawinter/main.go serve -p 8080
 ## 環境変数
 
 ```bash
-DB_HOST=db                  # データベースホスト
+DB_HOST=127.0.0.1            # データベースホスト (ホストから) / db (compose 内)
 DB_PORT=3306                # データベースポート
 DB_USER=root                # データベースユーザ
-DB_PASSWORD=password        # データベースパスワード
+DB_PASS=password            # データベースパスワード (テスト用ベタ書き)
 DB_NAME=mawinter            # データベース名
 GO111MODULE=on              # Go モジュール有効化
 CGO_ENABLED=0               # 静的ビルド用
 ```
 
-## 開発サービス (Dev Container)
+## ローカル開発 (API 開発用)
 
-- **8080** - バックエンド API
-- **3000** - フロントエンド (Nuxt)
-- **3306** - MySQL/MariaDB
-- **8081** - phpMyAdmin (データベース管理 UI)
+```bash
+# DB 起動 (docker / podman どちらでも可)
+docker compose -f deployment/compose-for-apidev.yml up -d db
+# podman の場合: podman compose -f deployment/compose-for-apidev.yml up -d db
+# または: make -C backend db-up  # docker/podman 自動判定
+
+# マイグレーション
+make -C backend migrate-up
+
+# ダミーデータ投入
+make -C backend seed
+
+# API 起動 (ホスト)
+go run ./backend/cmd/mawinter serve --port 8080
+# またはコンテナ
+docker compose -f deployment/compose-for-apidev.yml --profile api up -d --build
+# podman の場合: podman compose -f deployment/compose-for-apidev.yml --profile api up -d --build
+
+# phpMyAdmin (任意)
+docker compose -f deployment/compose-for-apidev.yml --profile tools up -d
+# http://localhost:8081 (root / password)
+
+# クリーンアップ
+docker compose -f deployment/compose-for-apidev.yml down -v
+make -C backend db-reset  # リセット + マイグレーション + シードを一括
+```
+
+## 開発サービス (deployment/compose-for-apidev.yml)
+
+- **8080** - バックエンド API (ホスト or `profile: api`)
+- **3000** - フロントエンド (Nuxt, 別途起動)
+- **3306** - MariaDB
+- **8081** - phpMyAdmin (`--profile tools` で起動)
 
 ## 実装ステータス
 
@@ -356,7 +396,7 @@ CGO_ENABLED=0               # 静的ビルド用
 - OpenAPI からのコード生成パイプライン
 - Gin による HTTP サーバスケルトン
 - マイグレーションによるデータベーススキーマ
-- Dev Container 設定
+- ローカル DB 環境 (deployment/compose-for-apidev.yml + seed)
 
 ### 未実装 (現在エンドポイントは 501 Not Implemented を返す)
 - ドメイン層 (エンティティ、リポジトリ、ビジネスロジック)
